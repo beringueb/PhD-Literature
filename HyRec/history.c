@@ -598,7 +598,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
       z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
       xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
       Tm_output[iz] = param->T0 * (1.+z); 
-      xrayleigh_output[iz] = 0.;
+      xrayleigh_output[iz] = 1.-xe_output[iz];
    }
   
    /******** He II -> I recombination. 
@@ -620,7 +620,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         xH1s          = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1.-xH1s) + xHeII;
-        xrayleigh_output[iz] = xH1s;
+        xrayleigh_output[iz] = xH1s+ 0.1*param->fHe*(1.-xHeII);
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
 				 param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));   
     }    
@@ -641,7 +641,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
       get_rec_next2_HHe(param, iz-1, z, Tm_output[iz-1], &xH1s, &xHeII, rate_table, twog_params, Dfminus_hist, Dfminus_Ly_hist, 
                         Dfnu_hist, &dxHIIdlna_prev,  &dxHeIIdlna_prev, &dxHIIdlna_prev2, &dxHeIIdlna_prev2, &post_saha);
       xe_output[iz] = (1.-xH1s) + xHeII;
-      xrayleigh_output[iz] = xH1s;
+      xrayleigh_output[iz] = xH1s + 0.1*param->fHe*(1.-xHeII);
       z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
       Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
                       param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));       
@@ -658,7 +658,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
                                  param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
-        xrayleigh_output[iz] = 1.-xe_output[iz];
+        xrayleigh_output[iz] =  1.-xe_output[iz];
     }
 
     /******** Evolve xe and Tm simultaneously until the lower bounds of integration tables are reached.
