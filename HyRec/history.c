@@ -583,7 +583,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
    double Delta_xe, xHeII, xH1s;
    double **Dfminus_hist;
    int post_saha;
-  
+
    Dfminus_hist = create_2D_array(NVIRT, param->nzrt);
   
    /* Make sure the input spectrum is initialized at zero */
@@ -593,14 +593,15 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
   
    /********* He III -> II Saha phase. Tm = Tr. Stop when xHeIII = 1e-8 *********/
    Delta_xe = param->fHe;   /* Delta_xe = xHeIII here */
-   printf("Stopped at %l", iz);
+   
    for(iz=0; iz<param->nz && Delta_xe > 1e-8; iz++) {
       z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
       xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
       Tm_output[iz] = param->T0 * (1.+z); 
       xrayleigh_output[iz] = 0.;
+
    }
-   printf("Stopped at %l", iz);
+   
    /******** He II -> I recombination. 
              Hydrogen in Saha equilibrium with the free electrons. 
              Tm fixed to steady state.                                    
@@ -620,11 +621,12 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         xH1s          = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1.-xH1s) + xHeII;
-        xrayleigh_output[iz] = xH1s+ 0.1*(1.-xHeII);
+        xrayleigh_output[iz] = xH1s; /*+ 0.1*(1.-xHeII);*/
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
-				 param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));   
+				 param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
+
     }    
-     printf("Stopped at %l", iz);
+   
 
     /******** H II -> I and He II -> I simultaneous recombination (rarely needed but just in case)
               Tm fixed to steady state.
@@ -644,9 +646,9 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
       xrayleigh_output[iz] = xH1s+ 0.1*(1. - xHeII);
       z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
       Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
-                      param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));       
+                      param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z)); 
+ 
    }
-    printf("Stopped at %l", iz);
 
      /******** H recombination. Helium assumed entirely neutral.
                Tm fixed to steady-state until its relative difference from Tr is DLNT_MAX 
@@ -659,8 +661,9 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
                                  param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
         xrayleigh_output[iz] =1-xe_output[iz] + 0.1*param->fHe;
+
     }
-     printf("Stopped at %l", iz);
+
     /******** Evolve xe and Tm simultaneously until the lower bounds of integration tables are reached.
               Note that the radiative transfer calculation is switched off automatically in the functions 
               rec_get_xe_next1_H and rec_get_xe_next2_HTm when it is no longer relevant.   
@@ -676,8 +679,9 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                               &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
          xrayleigh_output[iz] =1.-xe_output[iz] + 0.1*param->fHe;
          z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
+
     }
-     printf("Stopped at %l", iz);
+
     /***** For low redshifts (z < 20 or so) use Peeble's model (Tm is evolved with xe). 
             The precise model does not metter much here as 
             1) the free electron fraction is basically zero (~1e-4) in any case and 
@@ -690,10 +694,12 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
                               &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
         xrayleigh_output[iz] = 1.-xe_output[iz] + 0.1*param->fHe;
         z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
+
     }
-     printf("Stopped at %l", iz);
+
      /* Cleanup */
      free_2D_array(Dfminus_hist, NVIRT);
+
 }
 /******************************************************************************************************************************/
 

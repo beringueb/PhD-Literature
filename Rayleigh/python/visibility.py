@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 file_out_hyrec_vis = '/home/bb510/Code/Rayleigh/visibilities/vis_hyrec.txt'
 file_out_recfast_vis = '/home/bb510/Code/Rayleigh/visibilities/vis_recfast.txt' 
 
+file_out_xrayleigh_hyrec = '/home/bb510/Code/Rayleigh/visibilities/out_ray_hyrec.txt'
+file_out_xrayleigh_recfast = '/home/bb510/Code/Rayleigh/visibilities/out_ray_recfast.txt'
+
 file_out_hyrec_taudot = '/home/bb510/Code/Rayleigh/visibilities/taudot_hyrec.txt'
 file_out_recfast_taudot = '/home/bb510/Code/Rayleigh/visibilities/taudot_recfast.txt' 
 
@@ -17,6 +20,19 @@ recfast_taudot1,recfast_taudot2,recfast_taudot3,recfast_taudot4,recfast_taudot5,
 hyrec_vis1,hyrec_vis2,hyrec_vis3,hyrec_vis4,hyrec_vis5,hyrec_vis6,hyrec_vis7,hyrec_vis8,hyrec_vis9 = np.loadtxt(file_out_hyrec_vis,usecols = (0,1,2,3,4,5,6,7,8), unpack = True)
 
 hyrec_taudot1,hyrec_taudot2,hyrec_taudot3,hyrec_taudot4,hyrec_taudot5,hyrec_taudot6,hyrec_taudot7,hyrec_taudot8,hyrec_taudot9 = np.loadtxt(file_out_hyrec_taudot,usecols = (0,1,2,3,4,5,6,7,8), unpack = True)
+
+hyrec_ray1, hyrec_ray2 = np.loadtxt(file_out_xrayleigh_hyrec, usecols = (0,1), unpack = True, skiprows = 17, comments = 'Reion')
+recfast_ray1, recfast_ray2 = np.loadtxt(file_out_xrayleigh_recfast, usecols = (0,1), unpack = True)
+print(np.shape(hyrec_ray1), np.shape(recfast_ray1))
+
+fig, axs = plt.subplots(1,1)
+axs.plot(hyrec_ray1,hyrec_ray2,markersize = 2, label = 'HyRec',marker = '+',ls = '')
+axs.plot(recfast_ray1,recfast_ray2,lw = 2,c = 'r', label = 'Recfast')
+axs.set_ylim(-0.1,1.1)
+axs.set_xlim(0,0.002)
+axs.legend(loc = 'lower right')
+
+plt.show()
 
 fig, axs = plt.subplots(1,2)
 
@@ -88,7 +104,7 @@ axs[1].set_xscale('log')
 axs[1].set_title('Relative difference in the visibility function')
 axs[1].legend()
 
-plt.show()
+
 
 
 
