@@ -32,6 +32,9 @@ for i in range(6) :
             axs[i,j].set_xlabel('{}'.format(freq[j]))
         if j == 0 :
             axs[i,j].set_ylabel('{}'.format(freq[i]))
+            axs[i,j].set_ylim(-0.5,0.5)
+        if i == 0 :
+            axs[i,j].set_ylim(-0.5,0.5)
 
         axs[i,j].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
 plt.suptitle(r'Difference between Rayleigh signal calculated from Hyrec and Recfast',fontsize =  26)

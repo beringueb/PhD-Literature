@@ -13,7 +13,7 @@ mean = (0.25,0.99,67.27,0.2225E-01 ,0.1198,2.21,0.9645,0.079)
 delta = np.asarray((0.07,1.0,1.5 ,4E-4 ,4e-3,0.12 ,0.01,0.04))
 param_names = ['helium_fraction','massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
 name = ('$Y_p$','$N_{eff}$','$H_0$','$\Omega_bh^2$','$\Omega_ch^2$', '$10^9 A_s$','$n_s$','$/\tau$')
-param_list = ['massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
+param_list = ['helium_fraction','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
 
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
