@@ -109,7 +109,10 @@ def derivative_cov(experiment,param_name, freqs, delta) :
     for which in ['min', 'max', 'mean'] :
         data_cl = reading_data(experiment,param_name, freqs, freq_tot, which)
         cov[which] = def_cov_matrix(data_cl, do_pol, do_rayleigh, freqs)
-    deriv_cov = (cov['max'] - cov['min']) / delta 
+    if param_name == 'DM_Pann' :
+        deriv_cov = (cov['max'] - cov['min']) / (0.5*delta) 
+    else :
+        deriv_cov = (cov['max'] - cov['min']) / delta 
     return cov['mean'], deriv_cov
 
 def compute_error(cov_mean, deriv_cov_i, deriv_cov_j) :
@@ -129,7 +132,7 @@ def compute_fisher(param_names,mean,delta,do_pol,do_rayleigh,update) :
             if which == 'mean' :
                 value = mean[param_name]
             elif which == 'min' :
-                value = mean[param_name] - delta[param_name]/2
+                value = max(mean[param_name] - delta[param_name]/2, 0)
             else : 
                 value = mean[param_name] + delta[param_name]/2
             if update :
@@ -150,14 +153,14 @@ def compute_fisher(param_names,mean,delta,do_pol,do_rayleigh,update) :
 
 #MAIN PROGRAM
 
-param_names = ['helium_fraction','massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
-mean = {'helium_fraction' : 0.25, 'massless_neutrinos' : 2.99, 'hubble' : 67.27,'ombh2' : 0.2225E-01 ,'omch2' : 0.1198, 'scalar_amp' : 2.21 ,'scalar_spectral_index' : 0.9645,'re_optical_depth' : 0.079}
-delta = {'helium_fraction' : 0.07, 'massless_neutrinos' : 0.8, 'hubble' : 1.5 ,'ombh2' : 4E-4 ,'omch2' : 4e-3, 'scalar_amp' : 0.1 ,'scalar_spectral_index' : 0.01,'re_optical_depth' : 0.04}
-freq_tot = [0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900]
-freqs = [0,750,800,850,900]
-experiment = 'GRID'
+param_names = ['DM_Pann', 'helium_fraction','massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
+mean = {'DM_Pann':0.,'helium_fraction' : 0.25, 'massless_neutrinos' : 2.99, 'hubble' : 67.27,'ombh2' : 0.2225E-01 ,'omch2' : 0.1198, 'scalar_amp' : 2.21 ,'scalar_spectral_index' : 0.9645,'re_optical_depth' : 0.079}
+delta = {'DM_Pann':1,'helium_fraction' : 0.07, 'massless_neutrinos' : 0.8, 'hubble' : 1.5 ,'ombh2' : 4E-4 ,'omch2' : 4e-3, 'scalar_amp' : 0.1 ,'scalar_spectral_index' : 0.01,'re_optical_depth' : 0.04}
+freq_tot = [0,95,145,220,270,350,405,862]
+freqs = [0,95,145,220,270]
+experiment = 'CCAT-S4'
 param_file_root = "/home/bb510/Code/CAMB/"
-noise_file = '/home/bb510/Code/Rayleigh/noise/noise_full_GRID_PLANCK.txt'
+noise_file = '/home/bb510/Code/Rayleigh/noise/noise_CMBS4.txt'
 l_min = 2
 l_max = 3000 
 l = np.linspace(l_min,l_max, l_max-l_min+1)
@@ -178,7 +181,7 @@ for do_pol in [True] :
            str2 = 'r'
         else : 
            str2 = 'nor'
-        np.savetxt('../fisher_matrices/fisher_{}_{}_750_900_GRID_PLANCK_full_params.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
+        np.savetxt('../fisher_matrices/fisher_{}_{}_S4_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
         update = False
 print("Done !")
 

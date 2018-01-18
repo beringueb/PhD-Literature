@@ -21,7 +21,7 @@ hyrec_vis1,hyrec_vis2,hyrec_vis3,hyrec_vis4,hyrec_vis5,hyrec_vis6,hyrec_vis7,hyr
 
 hyrec_taudot1,hyrec_taudot2,hyrec_taudot3,hyrec_taudot4,hyrec_taudot5,hyrec_taudot6,hyrec_taudot7,hyrec_taudot8,hyrec_taudot9 = np.loadtxt(file_out_hyrec_taudot,usecols = (0,1,2,3,4,5,6,7,8), unpack = True)
 
-hyrec_ray1, hyrec_ray2 = np.loadtxt(file_out_xrayleigh_hyrec, usecols = (0,1), unpack = True)
+hyrec_ray1, hyrec_ray2 = np.loadtxt(file_out_xrayleigh_hyrec, usecols = (0,1), unpack = True, skiprows = 17, comments = 'Reion')
 recfast_ray1, recfast_ray2 = np.loadtxt(file_out_xrayleigh_recfast, usecols = (0,1), unpack = True)
 print(np.shape(hyrec_ray1), np.shape(recfast_ray1))
 
