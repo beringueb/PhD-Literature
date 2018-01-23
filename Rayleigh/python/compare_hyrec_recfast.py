@@ -38,7 +38,7 @@ for i in range(6) :
 
         axs[i,j].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
 plt.suptitle(r'Difference between Rayleigh signal calculated from Hyrec and Recfast',fontsize =  26)
-plt.savefig('/home/bb510/Documents/PhD/Rayleigh/fig/diff_hyrec_recfast.pdf', format = 'pdf')
+#plt.savefig('/home/bb510/Documents/PhD/Rayleigh/fig/diff_hyrec_recfast.pdf', format = 'pdf')
 plt.show()
 
 

@@ -621,7 +621,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         xH1s          = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1.-xH1s) + xHeII;
-        xrayleigh_output[iz] = xH1s + 0.1*(param->fHe-xHeII);
+        xrayleigh_output[iz] =  xH1s + 0.1*(param->fHe-xHeII);
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
 				 param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
 
@@ -660,7 +660,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
                                  param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
-        xrayleigh_output[iz] =1-xe_output[iz] + 0.1*param->fHe;
+        xrayleigh_output[iz] = 1-xe_output[iz] + 0.1*param->fHe;
 
     }
 
@@ -677,7 +677,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
          rec_get_xe_next2_HTm(MODEL, param, z, xe_output[iz-1], Tm_output[iz-1], xe_output+iz, Tm_output+iz,
                               rate_table, iz-1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, 
                               &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
-         xrayleigh_output[iz] =1.-xe_output[iz] + 0.1*param->fHe;
+         xrayleigh_output[iz] = 1.-xe_output[iz] + 0.1*param->fHe;
          z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
 
     }
@@ -692,7 +692,7 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         rec_get_xe_next2_HTm(PEEBLES, param, z, xe_output[iz-1], Tm_output[iz-1], xe_output+iz, Tm_output+iz,
                               rate_table, iz-1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                               &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
-        xrayleigh_output[iz] = 1.-xe_output[iz] + 0.1*param->fHe;
+        xrayleigh_output[iz] =  1.-xe_output[iz] + 0.1*param->fHe;
         z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
 
     }

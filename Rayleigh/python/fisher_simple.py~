@@ -160,7 +160,7 @@ freq_tot = [0,95,145,220,270,350,405,862]
 freqs = [0,95,145,220,270]
 experiment = 'CCAT-S4'
 param_file_root = "/home/bb510/Code/CAMB/"
-noise_file = '/home/bb510/Code/Rayleigh/noise/noise_CMBS4_PLANCK.txt'
+noise_file = '/home/bb510/Code/Rayleigh/noise/noise_CMBS4.txt'
 l_min = 2
 l_max = 3000 
 l = np.linspace(l_min,l_max, l_max-l_min+1)
@@ -181,7 +181,7 @@ for do_pol in [True] :
            str2 = 'r'
         else : 
            str2 = 'nor'
-        np.savetxt('../fisher_matrices/fisher_{}_{}_S4_PLANCK_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
+        np.savetxt('../fisher_matrices/fisher_{}_{}_S4_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
         update = False
 print("Done !")
 

@@ -3,27 +3,126 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-out_DM10 = "../visibilities/out_ray_tau_DM.txt"
-out_noDM = "../visibilities/out_ray_tau_noDM.txt"
+out_ray_DM10 = "../visibilities/10DM/out_ray_tau.txt"
+out_ray_noDM = "../visibilities/noDM/out_ray_tau.txt"
+out_ray_noDM_mod = "../visibilities/noDM_mod/out_ray_tau.txt"
+out_ray_DM10_mod = "../visibilities/10DM_mod/out_ray_tau.txt"
+out_ray_noDM_rec = "../visibilities/noDM_rec/out_ray_tau.txt"
+out_ray_omb = "../visibilities/omb/out_ray_tau.txt"
 
-file_cl_noDM = "/home/bb510/Code/CAMB/tests/Rayleigh/test/hyrec_noDM_"
-file_cl_DM10 = "/home/bb510/Code/CAMB/tests/Rayleigh/test/hyrec_10DM_"
+out_xe_DM10 = "../visibilities/10DM/out_xe_tau.txt"
+out_xe_noDM = "../visibilities/noDM/out_xe_tau.txt"
+out_xe_noDM_mod = "../visibilities/noDM_mod/out_xe_tau.txt"
+out_xe_DM10_mod = "../visibilities/10DM_mod/out_xe_tau.txt"
+out_xe_noDM_rec = "../visibilities/noDM_rec/out_xe_tau.txt"
+out_xe_omb = "../visibilities/omb/out_xe_tau.txt"
+
+
+
+file_out_hyrec_vis = '/home/bb510/Code/Rayleigh/visibilities/vis_hyrec.txt'
 
 #order = TT,EE,TE
 freq = ('$Primary$', '$143 GHz$', '$217 GHz$', '$353 GHz$', '$545 GHz$', '$857 GHz$')
 lmax = 4000
 
-noDM_x, noDM_y = np.loadtxt(out_noDM, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
-DM10_x, DM10_y = np.loadtxt(out_DM10, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+noDM_x, noDM_xe = np.loadtxt(out_xe_noDM, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+DM10_x, DM10_xe = np.loadtxt(out_xe_DM10, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+noDM_x, noDM_xe_mod = np.loadtxt(out_xe_noDM_mod, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+DM10_x, DM10_xe_mod = np.loadtxt(out_xe_DM10_mod, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+noDM_x, noDM_xe_rec = np.loadtxt(out_xe_noDM_rec, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+omb_x, omb_xe = np.loadtxt(out_xe_omb, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+
+noDM_x, noDM_ray = np.loadtxt(out_ray_noDM, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+DM10_x, DM10_ray = np.loadtxt(out_ray_DM10, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+noDM_x, noDM_ray_mod = np.loadtxt(out_ray_noDM_mod, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+DM10_x, DM10_ray_mod = np.loadtxt(out_ray_DM10_mod, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+noDM_x, noDM_ray_rec = np.loadtxt(out_ray_noDM_rec, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+omb_x, omb_ray = np.loadtxt(out_ray_omb, usecols = (0,1), unpack = True, skiprows = 18, comments = 'Rei')
+
+
+hyrec_vis1,hyrec_vis2,hyrec_vis3,hyrec_vis4,hyrec_vis5,hyrec_vis6,hyrec_vis7,hyrec_vis8,hyrec_vis9 = np.loadtxt(file_out_hyrec_vis,usecols = (0,1,2,3,4,5,6,7,8), unpack = True)
+
+
 
 plt.rc('text', usetex = True)  
 
 fig, axs = plt.subplots(1,2, sharex = True)
-axs[0].plot(noDM_x, noDM_y, label = r'No DM annihilation')
-axs[0].plot(DM10_x, DM10_y, label = r'DM ammihilation (sigma = 10)')
-axs[1].plot(DM10_x, (DM10_y-noDM_y)/noDM_y*100)
-axs[0].set_xscale('log')
-#axs[0].set_xlim(0,0.005)
+axs[0].plot(noDM_x, noDM_xe, c = 'b', label = r'HyRec, no DM')
+axs[0].plot(noDM_x, DM10_xe, c = 'r', label = r'Hyrec, 10 DM')
+ax2 = axs[0].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+ax2 = axs[1].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+axs[1].plot(noDM_x, (DM10_xe-noDM_xe), c = 'k', label = 'Relative difference')
+axs[1].set_ylim(-0.01,0.01)
+axs[0].set_xlim(200,700)
+axs[0].legend()
+axs[1].legend()
+ax2.legend()
+plt.suptitle('Xe')
+
+fig, axs = plt.subplots(1,2, sharex = True)
+axs[0].plot(noDM_x, noDM_ray, c = 'b', label = r'HyRec, no DM')
+axs[0].plot(noDM_x, DM10_ray, c = 'r', label = r'Hyrec, 10 DM')
+ax2 = axs[0].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+ax2 = axs[1].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+axs[1].plot(noDM_x, (DM10_ray-noDM_ray), c = 'k', label = 'Relative difference')
+axs[1].set_ylim(-0.01,0.01)
+axs[0].set_xlim(200,700)
+axs[0].legend()
+axs[1].legend()
+ax2.legend()
+plt.suptitle('Xrayleigh ')
+
+plt.rc('text', usetex = True)  
+
+fig, axs = plt.subplots(1,2, sharex = True)
+axs[0].plot(noDM_x, noDM_xe, c = 'b', label = r'HyRec')
+axs[0].plot(noDM_x, omb_xe, c = 'r', label = r'Hyrec omb')
+ax2 = axs[0].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+ax2 = axs[1].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+axs[1].plot(noDM_x, (omb_xe-noDM_xe), c = 'k', label = 'Relative difference')
+axs[1].set_ylim(-0.01,0.01)
+axs[0].set_xlim(200,700)
+axs[0].legend()
+axs[1].legend()
+ax2.legend()
+plt.suptitle('Xe')
+
+fig, axs = plt.subplots(1,2, sharex = True)
+axs[0].plot(noDM_x, noDM_ray, c = 'b', label = r'HyRec')
+axs[0].plot(noDM_x, omb_ray, c = 'r', label = r'Hyrec omb')
+ax2 = axs[0].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+ax2 = axs[1].twinx()
+ax2.plot(hyrec_vis1,hyrec_vis4, c = 'c', label = 'visibility primary')
+ax2.plot(hyrec_vis1,hyrec_vis9*5, c = 'g', label = 'visibility 857GHz (x5)')
+ax2.set_ylim(0,0.03)
+axs[1].plot(noDM_x, (omb_ray-noDM_ray), c = 'k', label = 'Relative difference')
+axs[1].set_ylim(-0.01,0.01)
+axs[0].set_xlim(200,700)
+axs[0].legend()
+axs[1].legend()
+ax2.legend()
+plt.suptitle('Xrayleigh ')
 
 plt.show()
 

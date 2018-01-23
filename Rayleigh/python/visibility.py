@@ -41,7 +41,7 @@ axs[0].plot(recfast_vis1,recfast_vis7, label = '353 GHz')
 axs[0].plot(recfast_vis1,recfast_vis9, label = '857 GHz')
 axs[0].set_title('Recfast')
 axs[0].set_xlim(200,500)
-axs[0].set_xscale('log')
+#axs[0].set_xscale('log')
 axs[0].legend()
 
 axs[1].plot(hyrec_vis1,hyrec_vis4, label = 'Primary')
@@ -51,7 +51,7 @@ axs[1].plot(hyrec_vis1,hyrec_vis9, label = '857 GHz')
 axs[1].set_xlim(200,500)
 axs[1].set_title('HyRec')
 axs[1].legend()
-axs[1].set_xscale('log')
+#axs[1].set_xscale('log')
 plt.suptitle('Visibility functions')
 
 

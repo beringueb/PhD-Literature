@@ -156,17 +156,17 @@ def compute_fisher(param_names,mean,delta,do_pol,do_rayleigh,update) :
 param_names = ['DM_Pann', 'helium_fraction','massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
 mean = {'DM_Pann':0.,'helium_fraction' : 0.25, 'massless_neutrinos' : 2.99, 'hubble' : 67.27,'ombh2' : 0.2225E-01 ,'omch2' : 0.1198, 'scalar_amp' : 2.21 ,'scalar_spectral_index' : 0.9645,'re_optical_depth' : 0.079}
 delta = {'DM_Pann':1,'helium_fraction' : 0.07, 'massless_neutrinos' : 0.8, 'hubble' : 1.5 ,'ombh2' : 4E-4 ,'omch2' : 4e-3, 'scalar_amp' : 0.1 ,'scalar_spectral_index' : 0.01,'re_optical_depth' : 0.04}
-freq_tot = [0,95,145,220,270,350,405,862]
-freqs = [0,95,145,220,270]
-experiment = 'CCAT-S4'
+freq_tot = [0,150,226,273,350,405,862]
+freqs = [0,150,226,273,350,405,862]
+experiment = 'CCAT'
 param_file_root = "/home/bb510/Code/CAMB/"
-noise_file = '/home/bb510/Code/Rayleigh/noise/noise_CMBS4.txt'
+noise_file = '/home/bb510/Code/Rayleigh/noise/noise_CCAT_PLANCK.txt'
 l_min = 2
 l_max = 3000 
 l = np.linspace(l_min,l_max, l_max-l_min+1)
 plt.figure()
 
-update = False
+update =True
 
 modify_param_init(param_names,mean,l_max)
 
@@ -181,7 +181,7 @@ for do_pol in [True] :
            str2 = 'r'
         else : 
            str2 = 'nor'
-        np.savetxt('../fisher_matrices/fisher_{}_{}_S4_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
+        np.savetxt('../fisher_matrices/fisher_{}_{}_CCAT_PLANCK_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
         update = False
 print("Done !")
 
