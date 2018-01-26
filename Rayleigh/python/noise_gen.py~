@@ -68,7 +68,7 @@ def atmospheric_l_min(experiment,l_max) :
     for ll in range(l_min[experiment]-2) : 
         var[ll,1:2*n+1] = 1E12
     var[:,0] = l
-
+    print(var)
     return var
 
 np.savetxt('../noise/noise_PLANCK.txt',atmospheric_l_min('PLANCK',4000), delimiter = '   ', newline = '\n')
