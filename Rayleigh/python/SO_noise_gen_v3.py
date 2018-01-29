@@ -99,7 +99,7 @@ def Simons_Observatroy_V3_LA_noise(sensitivity_mode,f_sky,ell_max,delta_ell):
     N_ell_T_225 = (W_T_225* A_SR)**2. + AN_T_225
     N_ell_T_280 = (W_T_280* A_SR)**2. + AN_T_280
 
-    ## include the imapct of the beam ##
+    ## include the impact of the beam ##
     LA_beams = Simons_Observatroy_V3_LA_beams() / np.sqrt(8. * np.log(2)) /60. * np.pi/180.
     ## lac beams as a sigma expressed in radians ##
     N_ell_T_27 *= np.exp( ell*(ell+1)* LA_beams[0]**2 )
@@ -139,11 +139,26 @@ def Simons_Observatroy_V3_LA_noise(sensitivity_mode,f_sky,ell_max,delta_ell):
 print("band centers: ", Simons_Observatroy_V3_LA_bands(), "[GHz]")
 print("beam sizes: " , Simons_Observatroy_V3_LA_beams(), "[arcmin]")
 ## run the code to generate noise curves
-ell, N_ell_LA_T,N_ell_LA_Pol = Simons_Observatroy_V3_LA_noise(1,0.1,4001,1)
+ell, N_ell_LA_T,N_ell_LA_Pol = Simons_Observatroy_V3_LA_noise(1,0.4,4001,1)
 ## plot the temperature noise curves
-print(np.shape(ell))
-print(np.shape(np.transpose(N_ell_LA_T)))
-np.savetxt("../noise/noise_T_SO_v3.txt", np.concatenate((np.reshape(ell,(3999,1)), np.reshape(N_ell_LA_T[3,:],(3999,1)), np.transpose(N_ell_LA_T[2:7,:]), np.reshape(N_ell_LA_Pol[3,:],(3999,1)), np.transpose(N_ell_LA_Pol[2:7,:])), axis = 1) , delimiter = "   ", newline = "\n")
+l = np.reshape(ell,(3999,1))
+noiseT = np.transpose(N_ell_LA_T)
+noiseP = np.transpose(N_ell_LA_Pol)
+data_write = np.zeros((np.shape(l)[0],11))
+data_write[:,0] = ell
+data_write[:,1] = ell*(ell+1)/(2*np.pi)*noiseT[:,3]
+data_write[:,2] = ell*(ell+1)/(2*np.pi)*noiseT[:,2]
+data_write[:,3] = ell*(ell+1)/(2*np.pi)*noiseT[:,3]
+data_write[:,4] = ell*(ell+1)/(2*np.pi)*noiseT[:,4]
+data_write[:,5] = ell*(ell+1)/(2*np.pi)*noiseT[:,5]
+data_write[:,6] = ell*(ell+1)/(2*np.pi)*noiseP[:,3]
+data_write[:,7] = ell*(ell+1)/(2*np.pi)*noiseP[:,2]
+data_write[:,8] = ell*(ell+1)/(2*np.pi)*noiseP[:,3]
+data_write[:,9] = ell*(ell+1)/(2*np.pi)*noiseP[:,4]
+data_write[:,10] = ell*(ell+1)/(2*np.pi)*noiseP[:,5]
+
+
+np.savetxt("../noise/noise_T_SO_v3.txt",data_write , delimiter = "   ", newline = "\n")
 N_bands = np.size(Simons_Observatroy_V3_LA_bands())
 i = 0
 
@@ -152,10 +167,8 @@ freq = ( 27,  39,  93, 145, 225, 280)
 
 plt.figure()
 
-
-
 while (i < N_bands):
-    plt.loglog(ell,N_ell_LA_T[i])
+    plt.loglog(ell,N_ell_LA_T[i], color = color[i])
     i+=1
 
 plt.title("N($\ell$) Temperature")
@@ -170,11 +183,10 @@ plt.figure()
 i = 0
 while (i < N_bands):
     plt.loglog(ell,N_ell_LA_Pol[i],color = color[i],label = freq[i])
-    plt.loglog(ell,2*N_ell_LA_T[i],color = color[i])
     i+=1
 plt.title("N($\ell$) Polairiation")
 plt.ylabel("N($\ell$) [$\mu K^2$-SR] " )
-plt.legend(loc = 'lower left')
+#plt.legend(loc = 'lower left')
 plt.xlabel("$\ell$")
 plt.ylim(1e-6,1)
 plt.xlim(100,4000)

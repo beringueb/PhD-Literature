@@ -9,7 +9,7 @@ from scipy.stats import norm, chi2
 from matplotlib import rc
 
 f_sky = {'PLANCK':0.6,'CCAT':0.24,'SO':0.4,'S4':0.4,'250_GRID' : 0.5,'250_500_GRID' : 0.5,'500_750_GRID' : 0.5,'750_900_GRID' : 0.5,'full_GRID' : 0.5}
-mean = (67.27,0.2225E-01 ,0.1198,2.21,0.9645,0.079)
+mean = (67.27,0.2225E-01 ,0.1198,2.21,0.9645,0.058)
 delta = np.asarray((1.5 ,4E-4 ,4e-3,0.12 ,0.01,0.04))
 param_names = ['DM_Pann','helium_fraction','massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
 name = ('$H_0$','$\Omega_bh^2$','$\Omega_ch^2$', '$10^9 A_s$','$n_s$','$/\tau$')
@@ -74,14 +74,14 @@ cov_nor_planck = combine_experiment(['PLANCK'], param_list,rayleigh=False,pola=T
 cov_r_SO_planck = combine_experiment(['SO','PLANCK'], param_list,rayleigh=True,pola=True)
 cov_nor_SO_planck = combine_experiment(['SO','PLANCK'], param_list,rayleigh=False,pola=True)
 
-cov_r_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=True,pola=True)
-cov_nor_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=False,pola=True)
+#cov_r_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=True,pola=True)
+#cov_nor_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=False,pola=True)
 
 cov_r_ccat_planck = combine_experiment(['CCAT','PLANCK'], param_list,rayleigh=True,pola=True)
 cov_nor_ccat_planck = combine_experiment(['CCAT','PLANCK'], param_list,rayleigh=False,pola=True)
 
-cov_r_ccat_SO_planck = combine_experiment(['CCAT','SO','PLANCK'], param_list,rayleigh=True,pola=True)
-cov_r_ccat_S4_planck = combine_experiment(['CCAT','S4','PLANCK'], param_list,rayleigh=True,pola=True)
+#cov_r_ccat_SO_planck = combine_experiment(['CCAT','SO','PLANCK'], param_list,rayleigh=True,pola=True)
+#cov_r_ccat_S4_planck = combine_experiment(['CCAT','S4','PLANCK'], param_list,rayleigh=True,pola=True)
 
 
 def display_errors(cov1,cov2 = 'None', param_list= param_list) :
@@ -105,13 +105,13 @@ print('\n SO + PLANCK \n')
 display_errors(cov_nor_SO_planck, cov_r_SO_planck, param_list )
 
 print('\n S4 + PLANCK \n')
-display_errors(cov_nor_S4_planck, cov_r_S4_planck, param_list )
+#display_errors(cov_nor_S4_planck, cov_r_S4_planck, param_list )
 
 print('\n CCAT + SO + PLANCK \n')
-display_errors(cov_r_SO_planck, cov_r_ccat_SO_planck, param_list )
+#display_errors(cov_r_SO_planck, cov_r_ccat_SO_planck, param_list )
 
 print('\n CCAT + S4 + PLANCK \n')
-display_errors(cov_r_S4_planck, cov_r_ccat_S4_planck, param_list )
+#display_errors(cov_r_S4_planck, cov_r_ccat_S4_planck, param_list )
 
         
 plt.rc('text', usetex = True)  

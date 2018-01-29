@@ -40,7 +40,7 @@ plt.show()
 
 
 f, axs = plt.subplots(1,2, sharex = True, sharey = True)
-#for i in range(len(freqs)) :
+for i in range(len(freqs)) :
     #axs[0].plot(data_new[:,0],(data_old[:,i+1]-data_new[:,1+i]) / data_old[:,i+1] * 100, label = '{}'.format(freqs[i]), color = clr[i])
     #axs[1].plot(data_new[:,0],(2*data_old[:,i+1]-data_new[:,6+i]) / (2*data_old[:,i+1]) * 100, label = '{}'.format(freqs[i]), color = clr[i])
 axs[0].set_xscale('log')
