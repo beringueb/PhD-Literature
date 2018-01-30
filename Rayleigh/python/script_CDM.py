@@ -74,14 +74,17 @@ cov_nor_planck = combine_experiment(['PLANCK'], param_list,rayleigh=False,pola=T
 cov_r_SO_planck = combine_experiment(['SO','PLANCK'], param_list,rayleigh=True,pola=True)
 cov_nor_SO_planck = combine_experiment(['SO','PLANCK'], param_list,rayleigh=False,pola=True)
 
-#cov_r_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=True,pola=True)
-#cov_nor_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=False,pola=True)
+cov_r_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=True,pola=True)
+cov_nor_S4_planck = combine_experiment(['S4','PLANCK'], param_list,rayleigh=False,pola=True)
 
 cov_r_ccat_planck = combine_experiment(['CCAT','PLANCK'], param_list,rayleigh=True,pola=True)
 cov_nor_ccat_planck = combine_experiment(['CCAT','PLANCK'], param_list,rayleigh=False,pola=True)
 
-#cov_r_ccat_SO_planck = combine_experiment(['CCAT','SO','PLANCK'], param_list,rayleigh=True,pola=True)
-#cov_r_ccat_S4_planck = combine_experiment(['CCAT','S4','PLANCK'], param_list,rayleigh=True,pola=True)
+cov_r_ccat = combine_experiment(['CCAT'], param_list,rayleigh=True,pola=True)
+cov_nor_ccat = combine_experiment(['CCAT'], param_list,rayleigh=False,pola=True)
+
+cov_r_ccat_SO_planck = combine_experiment(['CCAT','SO','PLANCK'], param_list,rayleigh=True,pola=True)
+cov_r_ccat_S4_planck = combine_experiment(['CCAT','S4','PLANCK'], param_list,rayleigh=True,pola=True)
 
 
 def display_errors(cov1,cov2 = 'None', param_list= param_list) :
@@ -105,13 +108,13 @@ print('\n SO + PLANCK \n')
 display_errors(cov_nor_SO_planck, cov_r_SO_planck, param_list )
 
 print('\n S4 + PLANCK \n')
-#display_errors(cov_nor_S4_planck, cov_r_S4_planck, param_list )
+display_errors(cov_nor_S4_planck, cov_r_S4_planck, param_list )
 
 print('\n CCAT + SO + PLANCK \n')
-#display_errors(cov_r_SO_planck, cov_r_ccat_SO_planck, param_list )
+display_errors(cov_r_SO_planck, cov_r_ccat_SO_planck, param_list )
 
 print('\n CCAT + S4 + PLANCK \n')
-#display_errors(cov_r_S4_planck, cov_r_ccat_S4_planck, param_list )
+display_errors(cov_r_S4_planck, cov_r_ccat_S4_planck, param_list )
 
         
 plt.rc('text', usetex = True)  

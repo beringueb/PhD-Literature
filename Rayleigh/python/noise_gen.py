@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interp
 from scipy import stats
+import os.path
 
 #PRISM data are form : https://arxiv.org/pdf/1306.2259.pdf
 # PLANCK data are from : https://arxiv.org/pdf/astro-ph/0604069.pdf
@@ -18,9 +19,9 @@ freq['PLANCK'] =  (0, 143, 217, 353, 545, 857) #in GHz
 freq['PRISM'] = (0,295,300,320,395,460,555,660,800) #in GHz
 freq['CCAT'] = (0,150,226,273,350,405,862) #in GHz
 freq['CMBS4'] = (0,95,145,220,270) #in GHz
-freq['CCAT-SO'] = (0,90,150,220,270,350,405,862) # in GHz
+freq['CCAT-SO'] = (0,93,145,225,280,350,405,862) # in GHz
 freq['CCAT-S4'] = (0,95,145,220,270,350,405,862) # in GHz
-freq['SO'] = (0,90,150,220,270) # in GHz
+freq['SO'] = (0,93,145,225,280) # in GHz
 freq['CCAT-PLANCK'] = freq['CCAT']
 
 ndet['PRISM'] =  np.asarray((350,350,350,350,350,350,300,300,200)) #prism
@@ -30,7 +31,7 @@ angle_beam['PLANCK'] = np.asarray((4.89,7.1,5.0,5.0,5.0,5.0))  #in arcmin
 angle_beam['PRISM'] = np.asarray((2.5, 1.7, 1.7, 1.6, 1.3, 1.1, 55./60, 46./60, 38./60)) #in arcmin 
 angle_beam['CCAT'] = np.asarray((1.4,1.4,1.0,0.8,0.6,0.5,0.3)) #in arcmin 
 angle_beam['CMBS4'] = np.asarray((1.4,2.2,1.4,1,0.8)) #in arcmin
-angle_beam['SO'] = np.asarray((1.8,2.8,1.8,1.2,1))
+angle_beam['SO'] = np.asarray((1.4,2.2,1.4,1,0.9))
 angle_beam['CCAT-S4'] = np.asarray((1.4,2.2,1.4,1,0.8,0.6,0.5,0.3))
 angle_beam['CCAT-SO'] = np.asarray((1.8,2.8,1.8,1.2,1,0.6,0.5,0.3))
 angle_beam['CCAT-PLANCK'] = np.asarray((4.89,1.4,1.0,0.8,0.6,0.5,0.3)) #in arcmin
@@ -42,7 +43,7 @@ noise_pix['PLANCK'] = np.asarray((5.148,2.2,4.8,14.7,500,6700))*T_CMB*angle_beam
 noise_pix['PRISM'] = np.asarray((67.1, 67.1, 67.1, 73.2, 107.,156., 297., 700., 20000.))/np.sqrt(ndet['PRISM'])*np.pi/10800  #in muKrad
 noise_pix['CCAT'] = np.asarray((5.,6.,5.,6.,30.,70.,70000.))*np.pi/10800  #in muKrad
 noise_pix['CMBS4'] = np.asarray((1.,0.7,1.,5.,5.))*np.pi/10800 #in muKrad
-noise_pix['SO'] = np.asarray((5.2,4.84,5.20,15.47,53.0))*np.pi/10800
+noise_pix['SO'] = np.asarray((9.97,8.04,9.97,22.33,53.59))*np.pi/10800
 noise_pix['CCAT-SO'] = np.asarray((5.2,4.84,5.20,15.47,53.0,30.,70.,70000.))*np.pi/10800 #in muKrad
 noise_pix['CCAT-S4'] = np.asarray((1.,0.7,1.,5.,5.,30.,70.,70000.))*np.pi/10800 #in muKrad
 noise_pix['CCAT-PLANCK'] = np.asarray((68.6,6.,5.,6.,30.,70.,70000.))*np.pi/10800  #in muKrad
@@ -50,19 +51,30 @@ noise_pix['CCAT-PLANCK'] = np.asarray((68.6,6.,5.,6.,30.,70.,70000.))*np.pi/1080
 def noise(experiment,l_max) :
     n = len(freq[experiment])
     l = np.linspace(2,l_max,l_max-1)
-    var = np.zeros((l_max-1, n+1))
+    var = np.zeros((l_max-1, 2*n+1))
     for i in range(n) : 
         var[:,i+1] = l*(l+1.)/(2*np.pi) * noise_pix[experiment][i] **2 * np.exp(l*(l+1.)*(angle_beam[experiment][i]*np.pi/10800)**2 /(8*np.log(2)))
-
-    for ll in range(l_min[experiment]-2) : 
-        var[ll,1:n+1] = 1E12
-    var[:,0] = l
+        var[:,n+i+1] = l*(l+1.)/(2*np.pi) * 2*(noise_pix[experiment][i] **2) * np.exp(l*(l+1.)*(angle_beam[experiment][i]*np.pi/10800)**2 /(8*np.log(2)))
     return var
 
-np.savetxt('../noise/noise_PLANCK.txt',noise('PLANCK',4000), delimiter = '   ', newline = '\n')
-np.savetxt('../noise/noise_SO.txt',noise('SO',4000), delimiter = '   ', newline = '\n')
-np.savetxt('../noise/noise_CMBS4.txt',noise('CMBS4',4000), delimiter = '   ', newline = '\n')
-np.savetxt('../noise/noise_CCAT.txt',noise('CCAT',4000), delimiter = '   ', newline = '\n')
+def atmospheric_l_min(experiment,l_max) :
+    file_name = "../noise/noise_{}.txt".format(experiment)
+    l = np.linspace(2,l_max,l_max-1)
+    n = len(freq[experiment])
+    if os.path.isfile(file_name) : 
+        var = np.loadtxt(file_name)
+    else :
+        var = noise(experiment, l_max) 
+    for ll in range(l_min[experiment]-2) : 
+        var[ll,1:2*n+1] = 1E12
+    var[:,0] = l
+
+    return var
+
+np.savetxt('../noise/noise_PLANCK.txt',atmospheric_l_min('PLANCK',4000), delimiter = '   ', newline = '\n')
+np.savetxt('../noise/noise_SO.txt',atmospheric_l_min('SO',4000), delimiter = '   ', newline = '\n')
+np.savetxt('../noise/noise_CMBS4.txt',atmospheric_l_min('CMBS4',4000), delimiter = '   ', newline = '\n')
+np.savetxt('../noise/noise_CCAT.txt',atmospheric_l_min('CCAT',4000), delimiter = '   ', newline = '\n')
 
 def co_add(list_experiment,list_freq_to_keep,header = 'None') : 
     l = noise(list_experiment[0],4000)[:,0]
@@ -78,17 +90,20 @@ def co_add(list_experiment,list_freq_to_keep,header = 'None') :
              index.append(i)
              freq_list_f.pop(freq_list_f.index(freq_list_s[i]))
     
-    noise_tot = np.zeros((np.shape(l)[0],len(freq_list_f)+1))
+    noise_tot = np.zeros((np.shape(l)[0],2*len(freq_list_f)+1))
     for i in range(len(freq_list_f)) :
         noise_min1 = np.zeros((np.shape(l)[0]))
+        noise_min1_P = np.zeros((np.shape(l)[0]))
         for j in range(n) :
-            noi = noise(list_experiment[j],4000)
+            noi = np.loadtxt("../noise/noise_{}.txt".format(list_experiment[j]))
             fr = list_freq_to_keep[j]
             arg = min(fr,key = lambda x:abs(x-freq_list_f[i]))
             if abs(arg-freq_list_f[i]) < 10 :
                 ind = freq[list_experiment[j]].index(arg)
                 noise_min1[:] += 1./noi[:,ind+1]
+                noise_min1_P[:] += 1./noi[:,len(freq[list_experiment[j]])+ind+1]
         noise_tot[:,i+1] = 1./noise_min1
+        noise_tot[:,len(freq_list_f)+i+1] = 1./noise_min1_P
     noise_tot[:,0] = l
     if header == 'None' :
         str1 = ''
@@ -100,10 +115,9 @@ def co_add(list_experiment,list_freq_to_keep,header = 'None') :
     return
 
 co_add(('CCAT','PLANCK'),((0,150,226,273,350,405,862),[0]))
-co_add(('CCAT','SO'),((150,226,273,350,405,862),(0,90,150,220,270)))
-co_add(('SO','PLANCK'),((0,90,150,220,270),[0]))
+co_add(('SO','PLANCK'),((0,93,145,225,280),[0]))
 co_add(('CMBS4','PLANCK'),((0,95,145,220,270),[0]))
-co_add(('CCAT','SO','PLANCK'),((150,226,273,350,405,862),(0,90,150,220,270),[0]))
+co_add(('CCAT','SO','PLANCK'),((150,226,273,350,405,862),(0,93,145,225,280),[0])) 
 co_add(('CCAT','CMBS4','PLANCK'),((150,226,273,350,405,862),(0,95,145,220,270),[0]))
 
 
@@ -143,39 +157,6 @@ def gen_noise(intercept) :
     np.savetxt('../noise/noise_grid_3muK.txt',noise('GRID',4000),delimiter = '   ', newline = '\n')
     return list(fr),noise_pix['GRID'],angle_beam['GRID']
 
-freq['GRID'],noise_pix['GRID'],angle_beam['GRID'] = gen_noise(-0.5)
-
-co_add(('GRID','PLANCK'),((0,50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900),[0]), header = 'full')
-co_add(('GRID','PLANCK'),((0,50,100,150,200,250),[0]), header = '250')
-co_add(('GRID','PLANCK'),((0,250,300,350,400,450,500),[0]), header = '250_500')
-co_add(('GRID','PLANCK'),((0,500,550,600,650,700,750),[0]), header = '500_750')
-co_add(('GRID','PLANCK'),((0,750,800,850,900),[0]), header = '750_900')
 
 
-color = {'SO' : 'r', 'CMBS4' : 'b', 'CCAT' : 'g','CCAT' : 'y','PLANCK' : 'k'}
-f,axs = plt.subplots(1,2,figsize = (15,10))
-for experiment in ['SO','CMBS4','CCAT','PLANCK'] :
-    axs[0].scatter(freq[experiment],noise_pix[experiment]*10800/np.pi,c=color[experiment],marker = '*', s = 150,label = experiment)
-    axs[1].scatter(freq[experiment], angle_beam[experiment],c = color[experiment],marker = '*',s = 150,label = experiment)
-
-fr_grid, noise_grid, angle_grid = gen_noise(-0.5)
-axs[0].scatter(fr_grid,noise_grid*10800/np.pi, c=(1,0.55,0), marker = 'o',s = 150, label = 'Grid test')
-axs[1].scatter(fr_grid,angle_grid, c=(1,0.55,0), marker = 'o',s = 150, label = 'Grid test')
-axs[0].set_title('Noise per pixel')
-axs[1].set_title('Beam width')
-axs[0].set_xlabel('Frequency [GHz]')
-axs[0].set_ylabel('Noise per pixel [muKarcmin]')
-axs[1].set_xlabel('Frequency [GHz]')
-axs[1].set_ylabel('FWHM [arcmin]')
-axs[0].set_yscale('log')
-axs[1].set_ylim(0.1,6)
-axs[0].set_ylim(1e-1,1e5)
-axs[0].set_xlim(0,900)
-axs[1].set_xlim(0,900)
-axs[0].legend(loc = 'upper left') 
-axs[1].legend(loc = 'upper left')
-axs[0].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
-axs[1].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
-plt.savefig('/home/bb510/Documents/PhD/Rayleigh/fig/noise_grid.pdf', format = 'pdf')
-plt.show()
 

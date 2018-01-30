@@ -85,12 +85,12 @@ def Simons_Observatroy_V3_LA_noise(sensitivity_mode,f_sky,ell_max,delta_ell):
     print("white noise level: ", np.array([MN_T_27,MN_T_39,MN_T_93,MN_T_145,MN_T_225,MN_T_280]),"[uK-arcmin]")
     ## calculate the astmospheric contribution for hews model ##
     ell_pivot = 1000.
-    AN_T_27 = 0#C_27 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_LF)
-    AN_T_39 = 0#C_39 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_LF)
-    AN_T_93 = 0#C_93 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_MF)
-    AN_T_145 = 0#C_145 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_MF)
-    AN_T_225 = 0#C_225 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_UHF)
-    AN_T_280 = 0#C_280 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_UHF)
+    AN_T_27 = C_27 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_LF)
+    AN_T_39 = C_39 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_LF)
+    AN_T_93 = C_93 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_MF)
+    AN_T_145 = C_145 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_MF)
+    AN_T_225 = C_225 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_UHF)
+    AN_T_280 = C_280 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_UHF)
     ## calculate
     N_ell_T_27 = (W_T_27* A_SR)**2. + AN_T_27
     N_ell_T_39 = (W_T_39* A_SR)**2. + AN_T_39
@@ -112,12 +112,12 @@ def Simons_Observatroy_V3_LA_noise(sensitivity_mode,f_sky,ell_max,delta_ell):
     N_ell_T_LA = np.array([N_ell_T_27,N_ell_T_39,N_ell_T_93,N_ell_T_145,N_ell_T_225,N_ell_T_280])
     ## CALCULATE N(ell) for Polarization ##
     ## calculate the astmospheric contribution for P
-    AN_P_27 = 1#(ell / f_knee_pol_LA_27 )**alpha_pol + 1.
-    AN_P_39 = 1#(ell / f_knee_pol_LA_39 )**alpha_pol + 1.
-    AN_P_93 = 1#(ell / f_knee_pol_LA_93 )**alpha_pol + 1.
-    AN_P_145 = 1#(ell / f_knee_pol_LA_145)**alpha_pol + 1.
-    AN_P_225 = 1#(ell / f_knee_pol_LA_225)**alpha_pol + 1.
-    AN_P_280 = 1#(ell / f_knee_pol_LA_280)**alpha_pol + 1.
+    AN_P_27 = (ell / f_knee_pol_LA_27 )**alpha_pol + 1.
+    AN_P_39 = (ell / f_knee_pol_LA_39 )**alpha_pol + 1.
+    AN_P_93 = (ell / f_knee_pol_LA_93 )**alpha_pol + 1.
+    AN_P_145 = (ell / f_knee_pol_LA_145)**alpha_pol + 1.
+    AN_P_225 = (ell / f_knee_pol_LA_225)**alpha_pol + 1.
+    AN_P_280 = (ell / f_knee_pol_LA_280)**alpha_pol + 1.
     ## calculate and include beam cotribution
     N_ell_P_27 = (W_T_27 * np.sqrt(2) * A_SR)**2 * AN_P_27 
     N_ell_P_27 *= np.exp(ell*(ell+1) * LA_beams[0]**2)
@@ -139,9 +139,9 @@ def Simons_Observatroy_V3_LA_noise(sensitivity_mode,f_sky,ell_max,delta_ell):
 print("band centers: ", Simons_Observatroy_V3_LA_bands(), "[GHz]")
 print("beam sizes: " , Simons_Observatroy_V3_LA_beams(), "[arcmin]")
 ## run the code to generate noise curves
-ell, N_ell_LA_T,N_ell_LA_Pol = Simons_Observatroy_V3_LA_noise(1,0.4,4001,1)
+ell, N_ell_LA_T,N_ell_LA_Pol = Simons_Observatroy_V3_LA_noise(1,0.4,100001,1)
 ## plot the temperature noise curves
-l = np.reshape(ell,(3999,1))
+l = np.reshape(ell,(99999,1))
 noiseT = np.transpose(N_ell_LA_T)
 noiseP = np.transpose(N_ell_LA_Pol)
 data_write = np.zeros((np.shape(l)[0],11))

@@ -78,10 +78,10 @@ def def_cov_matrix(data, do_pol, do_rayleigh, freqs) :
             cov = np.zeros((l_max-l_min+1,2*len(freqs),2*len(freqs)))
             for i in range(len(freqs)) : 
                 for j in range(len(freqs)) :
-                    cov[:,i,j] = data[:,0,0,0] + (1-KroneckerDelta(i,0))* data[:,i,0,0] + (1-KroneckerDelta(j,0))*data[:,0,j,0] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,0] + KroneckerDelta(i,j)*noise.values[l_min-2:l_max-1,freq_tot.index(freqs[i])+1]
+                    cov[:,i,j] = data[:,0,0,0] + (1-KroneckerDelta(i,0))* data[:,i,0,0] + (1-KroneckerDelta(j,0))*data[:,0,j,0] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,0] + KroneckerDelta(i,j)*noise.values[l_min-2:l_max-1,i+1]
             for i in range(len(freqs)) :
                 for j in range(len(freqs)) : 
-                    cov[:,i+len(freqs),j+len(freqs)] = data[:,0,0,1] + (1-KroneckerDelta(i,0))* data[:,i,0,1] + (1-KroneckerDelta(j,0))*data[:,0,j,1] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,1] + KroneckerDelta(i,j)*2.*noise.values[l_min-2:l_max-1,freq_tot.index(freqs[i])+1] 
+                    cov[:,i+len(freqs),j+len(freqs)] = data[:,0,0,1] + (1-KroneckerDelta(i,0))* data[:,i,0,1] + (1-KroneckerDelta(j,0))*data[:,0,j,1] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,1] + KroneckerDelta(i,j)*noise.values[l_min-2:l_max-1,i + len(freqs)+1] 
             for i in range(len(freqs)) :
                for j in range(len(freqs)) : 
                    cov[:,i,j+len(freqs)] = cov[:,j+len(freqs),i] =  data[:,0,0,2] + (1-KroneckerDelta(i,0))* data[:,i,0,2] + (1-KroneckerDelta(j,0))*data[:,0,j,2] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,2]           
@@ -89,7 +89,7 @@ def def_cov_matrix(data, do_pol, do_rayleigh, freqs) :
             cov = np.zeros((l_max-l_min+1,len(freqs),len(freqs))) 
             for i in range(len(freqs)) : 
                 for j in range(len(freqs)) :
-                    cov[:,i,j] = data[:,0,0,0] + (1-KroneckerDelta(i,0))* data[:,i,0,0] + (1-KroneckerDelta(j,0))*data[:,0,j,0] + KroneckerDelta(i,j)*noise.values[l_min-2:l_max-1,freq_tot.index(freqs[i])+1] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,0]
+                    cov[:,i,j] = data[:,0,0,0] + (1-KroneckerDelta(i,0))* data[:,i,0,0] + (1-KroneckerDelta(j,0))*data[:,0,j,0] + KroneckerDelta(i,j)*noise.values[l_min-2:l_max-1,i+1] + (1-KroneckerDelta(i,0))*(1-KroneckerDelta(j,0))*data[:,i,j,0]
                 
     else :
         if do_pol :
@@ -97,7 +97,7 @@ def def_cov_matrix(data, do_pol, do_rayleigh, freqs) :
             cov[:,0,0] = data[:,0,0,0] + noise.values[l_min-2:l_max-1,1] 
             cov[:,0,1] = data[:,0,0,2]
             cov[:,1,0] = data[:,0,0,2]
-            cov[:,1,1] = data[:,0,0,1] + 2*noise.values[l_min-2:l_max-1,1] 
+            cov[:,1,1] = data[:,0,0,1] + noise.values[l_min-2:l_max-1,1+len(freqs)] 
         else :
             cov = np.zeros((l_max-l_min+1,1,1))
             cov[:,0,0] = data[:,0,0,0] + noise.values[l_min-2:l_max-1,1] 
@@ -155,23 +155,23 @@ def compute_fisher(param_names,mean,delta,do_pol,do_rayleigh,update) :
 
 param_names = ['DM_Pann', 'helium_fraction','massless_neutrinos','hubble','ombh2','omch2', 'scalar_amp','scalar_spectral_index','re_optical_depth']
 mean = {'DM_Pann':0.,'helium_fraction' : 0.25, 'massless_neutrinos' : 2.99, 'hubble' : 67.27,'ombh2' : 0.2225E-01 ,'omch2' : 0.1198, 'scalar_amp' : 2.21 ,'scalar_spectral_index' : 0.9645,'re_optical_depth' : 0.058}
-delta = {'DM_Pann':1,'helium_fraction' : 0.07, 'massless_neutrinos' : 0.8, 'hubble' : 1.5 ,'ombh2' : 4E-4 ,'omch2' : 4e-3, 'scalar_amp' : 0.1 ,'scalar_spectral_index' : 0.01,'re_optical_depth' : 0.02}
-freq_tot = [0, 143, 217, 353, 545, 857]
-freqs = [0, 143, 217, 353, 545, 857]
-experiment = 'PLANCK'
+delta = {'DM_Pann':1.,'helium_fraction' : 0.07, 'massless_neutrinos' : 0.8, 'hubble' : 1.5 ,'ombh2' : 4E-4 ,'omch2' : 4e-3, 'scalar_amp' : 0.1 ,'scalar_spectral_index' : 0.01,'re_optical_depth' : 0.02}
+freq_tot = [0,93,145,225,280,350,405,862]
+freqs = [0,93,145,225,280]
+experiment = 'CCAT-SO'
 param_file_root = "/home/bb510/Code/CAMB/"
-noise_file = '/home/bb510/Code/Rayleigh/noise/noise_PLANCK.txt'
+noise_file = '/home/bb510/Code/Rayleigh/noise/noise_SO_PLANCK.txt'
 l_min = 2
 l_max = 3000 
 l = np.linspace(l_min,l_max, l_max-l_min+1)
 plt.figure()
 
-update = True
+update = False
 
 modify_param_init(param_names,mean,l_max)
 
-for do_pol in [True] :
-    for do_rayleigh in [False] :
+for do_pol in [True,False] :
+    for do_rayleigh in [True,False] :
         fisher = compute_fisher(param_names,mean,delta,do_pol,do_rayleigh,update)
         if do_pol :
            str1 = 'p'
@@ -181,7 +181,7 @@ for do_pol in [True] :
            str2 = 'r'
         else : 
            str2 = 'nor'
-        np.savetxt('../fisher_matrices/fisher_{}_{}_PLANCK_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
+        np.savetxt('../fisher_matrices/fisher_{}_{}_SO_PLANCK_full_params_DM.txt'.format(str2,str1), fisher, delimiter = '   ', newline = '\n')
         update = False
 print("Done !")
 
