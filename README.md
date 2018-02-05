@@ -17,6 +17,8 @@ This repository contains some of the literature material used for my PhD at DAMT
              - The new noise curves are significantly higher at low l due to atmosphere. This results in overall poorer constrains but increases the effect of Rayleigh scattering. To be further investigated ...
              - That shows how dependent on the noise modelling our forecasts are. Seems irrelevant to use previsous model for CCAT-p and CMB-S4 as it's very likely to be false. Need to refine our model. 
 
+05/02/2018 : - Added some Literature
+
  
             
  
