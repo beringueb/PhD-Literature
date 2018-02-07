@@ -58,6 +58,14 @@ axs[0].set_xlim(100,4000)
 axs[0].set_title('Relative diff in temperature')
 axs[1].set_title('Relative diff in polarization')
 
+freq_x = (27,39,93,145,225,280)
+freq_y = (200,7.7,1800,12000,68000,124000)
+
+plt.figure()
+plt.plot(freq_x, freq_y)
+plt.yscale('log')
+plt.show()
+
 
 
 

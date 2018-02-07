@@ -20,6 +20,9 @@ for i in range(len(freqs)) :
     plt.plot(data_old[:,0][data_old[:,i+1] < 1E50], data_old[:,i+1][data_old[:,i+1] < 1E50], color = clr[i], ls = 'dashed')
 plt.xscale('log')
 plt.yscale('log')
+plt.title("N($\ell$) Temperature")
+plt.ylabel("N($\ell$) [$\mu K^2$-SR] " )
+plt.xlabel("$\ell$")
 plt.xlim(100,4000)
 plt.ylim(1e-6,1e6)
 plt.legend(loc = 'lower right')
@@ -31,6 +34,9 @@ for i in range(len(freqs)) :
     plt.plot(data_old[:,0][data_old[:,i+1] < 1E50], 2*data_old[:,i+1][data_old[:,i+1] < 1E50], color = clr[i], ls = 'dashed')
 plt.xscale('log')
 plt.yscale('log')
+plt.title("N($\ell$) Polarization")
+plt.ylabel("N($\ell$) [$\mu K^2$-SR] " )
+plt.xlabel("$\ell$")
 plt.xlim(100,4000)
 plt.ylim(1e-6,1e6)
 plt.legend(loc = 'lower right')
@@ -51,6 +57,21 @@ axs[0].set_xlim(100,4000)
 
 axs[0].set_title('Relative diff in temperature')
 axs[1].set_title('Relative diff in polarization')
+
+    C_27 = 200.
+    C_39 = 7.7
+    C_93 = 1800.
+    C_145 = 12000.
+    C_225 = 68000.
+    C_280 =124000.
+
+freq_x = (27,39,93,145,225,280)
+freq_y = (200,7.7,1800,12000,68000,124000)
+
+plt.figure()
+plt.plot(freq_x, freq_y)
+plt.yscale('log')
+plt.show()
 
 
 

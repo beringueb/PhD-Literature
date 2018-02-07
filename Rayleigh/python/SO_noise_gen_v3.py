@@ -85,7 +85,7 @@ def Simons_Observatroy_V3_LA_noise(sensitivity_mode,f_sky,ell_max,delta_ell):
     print("white noise level: ", np.array([MN_T_27,MN_T_39,MN_T_93,MN_T_145,MN_T_225,MN_T_280]),"[uK-arcmin]")
     ## calculate the astmospheric contribution for hews model ##
     ell_pivot = 1000.
-    AN_T_27 = C_27 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_LF)
+    AN_T_27 = C_27 * (ell/ell_pivot)**alpha_temp*A_SR / 18-01t / np.sqrt(NTubes_LF)
     AN_T_39 = C_39 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_LF)
     AN_T_93 = C_93 * (ell/ell_pivot)**alpha_temp*A_SR / t / np.sqrt(NTubes_MF)
     AN_T_145 = C_145 * (ell/ell_pivot)**alpha_temp*A_SR / t /np.sqrt(NTubes_MF)
