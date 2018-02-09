@@ -11,7 +11,8 @@
       Include information on starting and ending redshit and timestep  
       Added May 2012: the period of Hydrogen recombination is evaluated right away so
       tables of radiation field can be reduced to only what is needed and memory is saved. 
-      Modified January 2018 (B. Beringue) modify rec_build_hisory to output ionized fraction of H
+      Modified January 2018 (B. Beringue) modify rec_build_hisory to output ionized fraction of H and to ouput delta_u, gaussian bump in recombination history for a PCA analysis. And modify REC_COSMOPARAMS to include position (mean_x) and width (width_x) of the gaussian bump
+      
 ****/
 
 typedef struct {
@@ -23,6 +24,9 @@ typedef struct {
    double fsR, meR;              /* alpha_fs/alpha_fs(today) and me/me(today) (Added April 2012)*/
      
    double pann;                  /* Dark matter annihilation parameter (added January 2015 ) */
+   /*Gaussian perturbation to Recombination history parameters (added Januray 2018)*/
+   double mean_x;  /*position (in redshift space) of the bump*/
+   double width_x;  /*width of the bump*/
 
    /* Secondary parameters, to avoid recalculating every time */
    double nH0;                  /* density of hydrogen today in m^{-3} */  
@@ -79,5 +83,5 @@ void rec_get_xe_next2_HTm(int func_select, REC_COSMOPARAMS *param, double z_in, 
                           HRATEEFF *rate_table, unsigned iz, TWO_PHOTON_PARAMS *twog_params, double **Dfminus_hist, double *Dfminus_Ly_hist[], 
                           double **Dfnu_hist, double *dxedlna_prev, double *dTmdlna_prev, double *dxedlna_prev2, double *dTmdlna_prev2);
 void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog_params,
-                       double *xe_output, double *xrayleigh_output, double *Tm_output, double **Dfnu_hist, double *Dfminus_Ly_hist[3]);
+                       double *xe_output, double *xrayleigh_output, double *delta_u_output, double *Tm_output, double **Dfnu_hist, double *Dfminus_Ly_hist[3]);
 

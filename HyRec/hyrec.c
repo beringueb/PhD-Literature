@@ -17,6 +17,7 @@
 /*            - January 2015: - changed the way the spectrum parameters are entered.                     */
 /*                            - possibility to print 21 cm temperatures                                  */
 /*            - January 2016 (B.Beringue) - changed rec_build_history to output fraction of ionized H    */
+/*                            - Implemented PCA 
 /*********************************************************************************************************/ 
 
 #include <stdlib.h>
@@ -37,7 +38,7 @@ int main(void) {
    HRATEEFF rate_table;
    TWO_PHOTON_PARAMS twog_params;
    RAD_OUTPUTS rad;
-   double *xe_output, *xrayleigh_output, *Tm_output, **Dfnu_hist, *Dfminus_Ly_hist[3];
+   double *xe_output, *xrayleigh_output, *delta_u_output, *Tm_output, **Dfnu_hist, *Dfminus_Ly_hist[3];
    long iz;
    REC_EXTRAS extras;
    
@@ -62,13 +63,14 @@ int main(void) {
 
    /* allocate memory for output (only nzrt for spectrum arrays) */
    xe_output          = create_1D_array(param.nz);
-   xrayleigh_output          = create_1D_array(param.nz);
+   xrayleigh_output   = create_1D_array(param.nz);
    Tm_output          = create_1D_array(param.nz);
+   delta_u_output     = create_1D_array(param.nz);
    allocate_rad_output(&rad, param.nzrt);
  
 
    /* Compute the recombination history */
-   rec_build_history(&param, &rate_table, &twog_params, xe_output, xrayleigh_output, Tm_output, rad.Dfnu, rad.Dfminus_Ly);
+   rec_build_history(&param, &rate_table, &twog_params, xe_output, xrayleigh_output, delta_u_output, Tm_output, rad.Dfnu, rad.Dfminus_Ly);
     
    
    /* Interpolate at the desired output redshifts */

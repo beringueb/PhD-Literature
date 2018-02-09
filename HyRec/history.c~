@@ -21,6 +21,7 @@
 /*                             - changed cosmological parameters input form                           */
 /*	                       - possibility to change fine structure constant/ electron mass         */
 /*             - January 2018: (B. Beringue) - added effects of Rayleigh scattering                   */
+/*                             - Implemented PCA                                                      */
 /******************************************************************************************************/ 
 
 
@@ -113,7 +114,7 @@ HRATEEFF rate_table;
 TWO_PHOTON_PARAMS twog_params;
 REC_COSMOPARAMS param;
 int firstTime = 0;
-double *xe_output, *xrayleigh_output, *tm_output, *ts_output;
+double *xe_output, *xrayleigh_output, *delta_u_output, *tm_output, *ts_output;
 RAD_OUTPUTS rad; 
 double logstart;
 
@@ -135,9 +136,10 @@ void hyrec_init() {
 
 void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const double* OmegaN, const double* Omegav 
          ,const double* h0inp, const double* tcmb, const double* yp, const double* num_nu, const double* Pann
-         ,const double* fsR, const double* meR, const int* feedback) {
+         , const double* fsR, const double* meR, const double* mean_x_PCA, const double* width_x_PCA, const bool* do_PCA, const int* feedback) {
  
   double h2 = *h0inp/100.;
+  long izz;
   h2 =h2*h2;
   param.T0 = *tcmb;
   param.obh2 = *OmegaB * h2;
@@ -149,12 +151,16 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
   param.fsR = *fsR;
   param.meR = *meR;  /*** Default: today's values = 1***/
   param.pann = *Pann * 1e-9; /*** DM annihilation ***/
+  param.mean_x = *mean_x_PCA; /*Position in redshift at which gaussian bump in xe is introduced (2018)*/
+  param.width_x = *width_x_PCA; /*width of the gaussian bump (2018)*/
   rec_set_derived_params(&param);
   if(*feedback > -1) { 
   	 fprintf(stderr, " ********HYREC******************** \n");
   	 fprintf(stderr, " P_ann         = %e (in cm^3/s/eV) \n", param.pann);
   	 fprintf(stderr, " m_e/m_e0      = %e \n", param.meR);
   	 fprintf(stderr, " alpha/alpha_0 = %e \n", param.fsR);
+         fprintf(stderr, " position of gaussian bump %e \n", param.mean_x);
+         fprintf(stderr, " width of gaussian bump %e \n", param.width_x); 
   	 fprintf(stderr, " ********HYREC******************** \n");
   }
 
@@ -164,12 +170,20 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
      logstart = -log(1.+ZSTART);
      xe_output = create_1D_array(param.nz);
      xrayleigh_output = create_1D_array(param.nz);
+     delta_u_output = create_1D_array(param.nz); 
      tm_output = create_1D_array(param.nz);
   }
   allocate_rad_output(&rad, param.nzrt);
   
-  rec_build_history(&param, &rate_table, &twog_params, xe_output, xrayleigh_output, tm_output, rad.Dfnu, rad.Dfminus_Ly);
+  rec_build_history(&param, &rate_table, &twog_params, xe_output, xrayleigh_output, delta_u_output, tm_output, rad.Dfnu, rad.Dfminus_Ly);
   
+  if (*do_PCA == true){
+     fprintf(stderr, " \n Perturbing recombination history \n");
+     for (izz=0; izz<param.nz; izz++) {
+         xe_output[izz] += xe_output[izz]*delta_u_output[izz]*0.01;  /*if do_PCA, then actually modify the ionization fraction, including the gaussian bump (added Januray 2018)*/
+     }
+  }
+
   free_rad_output(&rad);
 }
 
@@ -572,11 +586,12 @@ void rec_get_xe_next2_HTm(int func_select, REC_COSMOPARAMS *param, double z_in, 
 /**************************************************************************************************** 
 Builds a recombination history 
 Added May 2012: The radiation field was added as an input so it can be extracted if desired
-Added Januray 2018 : Modified the function to output xrayleigh_output 
+Added Januray 2018 : - Modified the function to output xrayleigh_output 
+                     - Modified the function to output delta_u_output, systematic perturbation of xe in a PCA
 ****************************************************************************************************/
 
 void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_PARAMS *twog_params,
-                       double *xe_output, double *xrayleigh_output, double *Tm_output, double **Dfnu_hist, double *Dfminus_Ly_hist[3]) {
+                       double *xe_output, double *xrayleigh_output, double *delta_u_output, double *Tm_output, double **Dfnu_hist, double *Dfminus_Ly_hist[3]) {
   
    long iz;
    double z, dxHIIdlna_prev, dxHIIdlna_prev2, dTmdlna_prev, dTmdlna_prev2, dxHeIIdlna_prev, dxHeIIdlna_prev2;
@@ -598,8 +613,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
       z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
       xe_output[iz] = rec_xesaha_HeII_III(param->nH0, param->T0, param->fHe, z, &Delta_xe, param->fsR, param->meR);
       Tm_output[iz] = param->T0 * (1.+z); 
-      xrayleigh_output[iz] = 1.-xe_output[iz] ; /*0.;*/
-
+      xrayleigh_output[iz] = 0.;
+      delta_u_output[iz] = exp(-(z-param->mean_x)*(z-param->mean_x)/(2*param->width_x*param->width_x));
    }
    
    /******** He II -> I recombination. 
@@ -621,10 +636,10 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         xH1s          = rec_saha_xH1s(xHeII, param->nH0, param->T0, z, param->fsR, param->meR);
         xe_output[iz] = (1.-xH1s) + xHeII;
-        xrayleigh_output[iz] = 1.-xe_output[iz] ; /* xH1s + 0.1*(param->fHe-xHeII);*/
+        xrayleigh_output[iz] =  xH1s + 0.1*(param->fHe-xHeII);
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
 				 param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
-
+        delta_u_output[iz] = exp(-(z-param->mean_x)*(z-param->mean_x)/(2*param->width_x*param->width_x));
     }    
    
 
@@ -643,11 +658,11 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
       get_rec_next2_HHe(param, iz-1, z, Tm_output[iz-1], &xH1s, &xHeII, rate_table, twog_params, Dfminus_hist, Dfminus_Ly_hist, 
                         Dfnu_hist, &dxHIIdlna_prev,  &dxHeIIdlna_prev, &dxHIIdlna_prev2, &dxHeIIdlna_prev2, &post_saha);
       xe_output[iz] = (1.-xH1s) + xHeII;
-      xrayleigh_output[iz] =1.-xe_output[iz] ; /* xH1s + 0.1*(param->fHe - xHeII);*/
+      xrayleigh_output[iz] = xH1s + 0.1*(param->fHe - xHeII);
       z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
       Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
                       param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z)); 
- 
+      delta_u_output[iz] = exp(-(z-param->mean_x)*(z-param->mean_x)/(2*param->width_x*param->width_x));
    }
 
      /******** H recombination. Helium assumed entirely neutral.
@@ -660,8 +675,8 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         z             = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
         Tm_output[iz] = rec_Tmss(xe_output[iz], param->T0*(1.+z), rec_HubbleConstant(param, z), param->fHe, 
                                  param->fsR, param->meR, dE_dtdV_func(z, param), 1e-6*param->nH0*cube(1.+z));  
-        xrayleigh_output[iz] = 1.-xe_output[iz] ; /*1-xe_output[iz] + 0.1*param->fHe;*/
-
+        xrayleigh_output[iz] = 1-xe_output[iz] + 0.1*param->fHe;
+        delta_u_output[iz] = exp(-(z-param->mean_x)*(z-param->mean_x)/(2*param->width_x*param->width_x));
     }
 
     /******** Evolve xe and Tm simultaneously until the lower bounds of integration tables are reached.
@@ -677,9 +692,9 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
          rec_get_xe_next2_HTm(MODEL, param, z, xe_output[iz-1], Tm_output[iz-1], xe_output+iz, Tm_output+iz,
                               rate_table, iz-1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist, 
                               &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
-         xrayleigh_output[iz] = 1.-xe_output[iz] ; /*1.-xe_output[iz] + 0.1*param->fHe;*/
+         xrayleigh_output[iz] = 1.-xe_output[iz] + 0.1*param->fHe;
          z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
-
+         delta_u_output[iz] = exp(-(z-param->mean_x)*(z-param->mean_x)/(2*param->width_x*param->width_x));
     }
 
     /***** For low redshifts (z < 20 or so) use Peeble's model (Tm is evolved with xe). 
@@ -692,9 +707,9 @@ void rec_build_history(REC_COSMOPARAMS *param, HRATEEFF *rate_table, TWO_PHOTON_
         rec_get_xe_next2_HTm(PEEBLES, param, z, xe_output[iz-1], Tm_output[iz-1], xe_output+iz, Tm_output+iz,
                               rate_table, iz-1, twog_params, Dfminus_hist, Dfminus_Ly_hist, Dfnu_hist,
                               &dxHIIdlna_prev, &dTmdlna_prev, &dxHIIdlna_prev2, &dTmdlna_prev2);
-        xrayleigh_output[iz] = 1.-xe_output[iz] ; /* 1.-xe_output[iz] + 0.1*param->fHe;*/
+        xrayleigh_output[iz] =  1.-xe_output[iz] + 0.1*param->fHe;
         z = (1.+ZSTART)*exp(-DLNA*iz) - 1.;
-
+        delta_u_output[iz] = exp(-(z-param->mean_x)*(z-param->mean_x)/(2*param->width_x*param->width_x));
     }
 
      /* Cleanup */
