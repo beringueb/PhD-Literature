@@ -139,7 +139,11 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
          , const double* fsR, const double* meR, const double* mean_x_PCA, const double* width_x_PCA, const bool* do_PCA, const int* feedback) {
  
   double h2 = *h0inp/100.;
+  double z;
   long izz;
+  char file_name[80];
+  FILE *fout_xe ;
+  
   h2 =h2*h2;
   param.T0 = *tcmb;
   param.obh2 = *OmegaB * h2;
@@ -154,6 +158,7 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
   param.mean_x = *mean_x_PCA; /*Position in redshift at which gaussian bump in xe is introduced (2018)*/
   param.width_x = *width_x_PCA; /*width of the gaussian bump (2018)*/
   rec_set_derived_params(&param);
+  
   if(*feedback > -1) { 
   	 fprintf(stderr, " ********HYREC******************** \n");
   	 fprintf(stderr, " P_ann         = %e (in cm^3/s/eV) \n", param.pann);
@@ -176,12 +181,18 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
   allocate_rad_output(&rad, param.nzrt);
   
   rec_build_history(&param, &rate_table, &twog_params, xe_output, xrayleigh_output, delta_u_output, tm_output, rad.Dfnu, rad.Dfminus_Ly);
+  sprintf(file_name, "/home/bb510/Code/Rayleigh/visibilities/PCA/xe_pos_%07.2f.txt",param.mean_x);
   
   if (*do_PCA){
+     fout_xe = fopen(file_name,"w");
      fprintf(stderr, " \n Perturbing recombination history ! \n");
      for (izz=0; izz<param.nz; izz++) {
+         z = (1.+ZSTART)*exp(-DLNA*izz) - 1.;
          xe_output[izz] += xe_output[izz]*delta_u_output[izz]*0.01;  /*if do_PCA, then actually modify the ionization fraction, including the gaussian bump (added Januray 2018)*/
+         fprintf(fout_xe,"%f      %f \n",z,xe_output[izz]);
+     
      }
+     fclose(fout_xe);
   }
 
   free_rad_output(&rad);
