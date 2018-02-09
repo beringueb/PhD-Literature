@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
 import pandas as pd
+from scipy import interpolate
 
 def KroneckerDelta(i,j) :
     if i==j :
@@ -117,24 +118,34 @@ def reading_data(experiment, position, freqs, freq_tot) :
             data[:,i,j,2] = data_read.values[l_min-2:l_max-1,4] #TE
     return data
 
-def derivative_cov(experiment, position, freqs) : 
+def derivative_cov(experiment, position, amplitude, freqs) : 
     cov = {}
     data_cl = reading_data(experiment, position, freqs, freq_tot)
     data_cl_fid = reading_data(experiment, 0, freqs, freq_tot)
     cov = def_cov_matrix(data_cl, do_pol, do_rayleigh, freqs)
     cov_fid = def_cov_matrix(data_cl_fid, do_pol, do_rayleigh, freqs)
-    deriv_cov = (cov - cov_fid) / (0.01) 
+    deriv_cov = (cov - cov_fid) / amplitude 
     return cov_fid, deriv_cov
 
-def compute_fisher(position_list,do_pol,do_rayleigh) : 
+def compute_error(cov_mean, deriv_cov_i, deriv_cov_j) :
+    fisher_error = np.zeros((l_max-l_min+1))
+    for ll in range(l_max-l_min+1) :
+        inv_cov = np.linalg.inv(cov_mean[ll,:,:])
+        fisher_error[ll] = np.trace(np.dot(inv_cov,np.dot(deriv_cov_i[ll,:,:],np.dot(inv_cov,deriv_cov_j[ll,:,:]))))
+    fisher = np.sum((2*l+1.)/2*fisher_error)
+
+    return fisher
+
+def compute_fisher(position_list, amplitude_list, do_pol,do_rayleigh) : 
     deriv_cov = np.zeros((N+1,l_max-l_min+1,2,2))
 
     for i in range(len(position_list)) :
         position = position_list[i]
+        amplitude = amplitude_list[i]
         modify_param_PCA(experiment,position,width)
         run_camb(position)
         print('Done {:d} out of {:d}'.format(i+1, len(position_list)))
-        cov_fid, deriv_cov[i,:,:,:] = derivative_cov(experiment, position, freqs)
+        cov_fid, deriv_cov[i,:,:,:] = derivative_cov(experiment, position, amplitude, freqs)
 
     fisher_mat = np.zeros((len(position_list)-1,len(position_list)-1))
 
@@ -145,6 +156,11 @@ def compute_fisher(position_list,do_pol,do_rayleigh) :
         print('Fisher_matrix {} % done !'.format((i+1)/(len(position_list)-1)*100) )
     return fisher_mat
 
+def interpolate_amplitude_perturbation(position_lst,fiducial_rec_file) :
+    z, xe = np.loadtxt(fiducial_rec_file,usecols = (0,1), unpack = True)
+    f = interpolate.interp1d(z[::-1],xe[::-1])
+    amplitude = 0.01*f(position_lst)
+    return amplitude
 
 #MAIN PROGRAM
 
@@ -156,29 +172,26 @@ freqs = [0, 143, 217, 353, 545, 857]
 experiment = 'PLANCK'
 param_file_root = "/home/bb510/Code/CAMB/"
 noise_file = '/home/bb510/Code/Rayleigh/noise/noise_PLANCK.txt'
+fiducial_rec_file = '../visibilities/PCA/xe_pos_0000.00.txt'
 l_min = 2
 l_max = 3000 
 l = np.linspace(l_min,l_max, l_max-l_min+1)
-def compute_error(cov_mean, deriv_cov_i, deriv_cov_j) :
-    fisher_error = np.zeros((l_max-l_min+1))
-    for ll in range(l_max-l_min+1) :
-        inv_cov = np.linalg.inv(cov_mean[ll,:,:])
-        fisher_error[ll] = np.trace(np.dot(inv_cov,np.dot(deriv_cov_i[ll,:,:],np.dot(inv_cov,deriv_cov_j[ll,:,:]))))
-    fisher = np.sum((2*l+1.)/2*fisher_error)
 
-    return fisher
 N = 160
 width = (3000-200)/(2*(N+1.))
 position_list_tmp = np.linspace(200,3000,N)
 position_list = np.append([0],position_list_tmp)
 
+amplitude_list_tmp = interpolate_amplitude_perturbation(position_list_tmp, fiducial_rec_file)
+amplitude_list = np.append([1],amplitude_list_tmp)
+print(amplitude_list)
 print(position_list)
 
 modify_param_init(param_names,mean,l_max)
 
 for do_pol in [True] :
     for do_rayleigh in [False] :
-        fisher = compute_fisher(position_list,do_pol,do_rayleigh)
+        fisher = compute_fisher(position_list, amplitude_list, do_pol,do_rayleigh)
         if do_pol :
            str1 = 'p'
         else :
