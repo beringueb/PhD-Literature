@@ -75,11 +75,11 @@ def compute_error(cov_mean, deriv_cov_i, deriv_cov_j) :
 
     return fisher
 
-def run_camb(position) :
-    subprocess.call("./camb {}".format(param_file_root + "PCA_init/params_PCA_{:07.2f}.ini".format(position)), shell = True, cwd = "/home/bb510/Code/CAMB/", stdout = subprocess.DEVNULL)
+def run_camb(position, sign) :
+    subprocess.call("./camb {}".format(param_file_root + "PCA_init/params_PCA_{:07.2f}_{:d}.ini".format(position,sign)), shell = True, cwd = "/home/bb510/Code/CAMB/", stdout = subprocess.DEVNULL)
 
 
-def modify_param_PCA(experiment, position, width) :
+def modify_param_PCA(experiment, position, width, sign) :
     param_file_init = param_file_root + "params_init.ini"
     with open(param_file_init) as f:
         newText = ''
@@ -95,24 +95,28 @@ def modify_param_PCA(experiment, position, width) :
             if 'Do_PCA' in line :
                 line1, line2 = line.split('=')
                 if position == 0 :
-                    line2 =   'F'
+                    line2 =   'F \n'
                 else : 
-                    line2 = 'T'
+                    line2 = 'T \n'
+                line = line1 + '=' + line2
+            if 'Amplitude_sign' in line :
+                line1, line2 = line.split('=')
+                line2 = '   {} \n'.format(sign)     
                 line = line1 + '=' + line2
             if "output_root" in line and not('#' in line) :
-                line = "output_root  = /store/DAMTP/bb510/Rayleigh/Data/camb_out/PCA/{}_{:07.2f} \n".format(experiment,position)
+                line = "output_root  = /store/DAMTP/bb510/Rayleigh/Data/camb_out/PCA/{}_{:07.2f}_{:d} \n".format(experiment,position,sign)
             newText += line 
-    out_file = param_file_root + "PCA_init/params_PCA_{:07.2f}.ini".format(position) 
+    out_file = param_file_root + "PCA_init/params_PCA_{:07.2f}_{:d}.ini".format(position,sign) 
     with open(out_file, "w") as f:
         f.write(newText)
 
 
-def reading_data(experiment, position, freqs, freq_tot) :
+def reading_data(experiment, position, sign, freqs, freq_tot) :
     data_file_root =  "/store/DAMTP/bb510/Rayleigh/Data/camb_out/PCA/"
     data = np.zeros((l_max-l_min+1, len(freqs), len(freqs), 3))
     for i in range(len(freqs)) : 
         for j in range(len(freqs)) :
-            data_read = pd.read_csv(data_file_root+'{}_{:07.2f}__{:d}_{:d}'.format(experiment,position, freq_tot.index(freqs[i])+1, freq_tot.index(freqs[j])+1), header = None, skiprows = 0, sep = '\s+' )
+            data_read = pd.read_csv(data_file_root+'{}_{:07.2f}_{:d}__{:d}_{:d}'.format(experiment,position, sign, freq_tot.index(freqs[i])+1, freq_tot.index(freqs[j])+1), header = None, skiprows = 0, sep = '\s+' )
             data[:,i,j,0] = data_read.values[l_min-2:l_max-1,1] #TT
             data[:,i,j,1] = data_read.values[l_min-2:l_max-1,2] #EE
             data[:,i,j,2] = data_read.values[l_min-2:l_max-1,4] #TE
@@ -120,11 +124,13 @@ def reading_data(experiment, position, freqs, freq_tot) :
 
 def derivative_cov(experiment, position, amplitude, freqs) : 
     cov = {}
-    data_cl = reading_data(experiment, position, freqs, freq_tot)
-    data_cl_fid = reading_data(experiment, 0, freqs, freq_tot)
-    cov = def_cov_matrix(data_cl, do_pol, do_rayleigh, freqs)
+    data_cl_plus = reading_data(experiment, position, 1, freqs, freq_tot)
+    data_cl_minus = reading_data(experiment, position, -1, freqs, freq_tot)
+    data_cl_fid = reading_data(experiment, 0, 1, freqs, freq_tot)
+    cov_plus = def_cov_matrix(data_cl_plus, do_pol, do_rayleigh, freqs)
+    cov_minus = def_cov_matrix(data_cl_minus, do_pol, do_rayleigh, freqs)
     cov_fid = def_cov_matrix(data_cl_fid, do_pol, do_rayleigh, freqs)
-    deriv_cov = (cov - cov_fid) / amplitude 
+    deriv_cov = (cov_plus - cov_minus) / (2*amplitude) 
     return cov_fid, deriv_cov
 
 def compute_error(cov_mean, deriv_cov_i, deriv_cov_j) :
@@ -142,8 +148,10 @@ def compute_fisher(position_list, amplitude_list, do_pol,do_rayleigh) :
     for i in range(len(position_list)) :
         position = position_list[i]
         amplitude = amplitude_list[i]
-        modify_param_PCA(experiment,position,width)
-        run_camb(position)
+        modify_param_PCA(experiment,position,width,1)
+        run_camb(position,1)
+        modify_param_PCA(experiment,position,width,-1)
+        run_camb(position,-1)
         print('Done {:d} out of {:d}'.format(i+1, len(position_list)))
         cov_fid, deriv_cov[i,:,:,:] = derivative_cov(experiment, position, amplitude, freqs)
 
@@ -158,7 +166,7 @@ def compute_fisher(position_list, amplitude_list, do_pol,do_rayleigh) :
 
 def interpolate_amplitude_perturbation(position_lst,fiducial_rec_file) :
     z, xe = np.loadtxt(fiducial_rec_file,usecols = (0,1), unpack = True)
-    f = interpolate.interp1d(z,xe)
+    f = interpolate.interp1d(z[::-1],xe[::-1])
     amplitude = 0.01*f(position_lst)
     return amplitude
 
@@ -172,7 +180,7 @@ freqs = [0, 143, 217, 353, 545, 857]
 experiment = 'PLANCK'
 param_file_root = "/home/bb510/Code/CAMB/"
 noise_file = '/home/bb510/Code/Rayleigh/noise/noise_PLANCK.txt'
-fiducial_rec_file = '../visibilities/PCA/xe_pos_0000.00.txt'
+fiducial_rec_file = '../visibilities/PCA/xe_pos_0000.00_1.txt'
 l_min = 2
 l_max = 3000 
 l = np.linspace(l_min,l_max, l_max-l_min+1)
@@ -184,8 +192,8 @@ position_list = np.append([0],position_list_tmp)
 
 amplitude_list_tmp = interpolate_amplitude_perturbation(position_list_tmp, fiducial_rec_file)
 amplitude_list = np.append([1],amplitude_list_tmp)
-print(amplitude_list)
-print(position_list)
+#print(amplitude_list)
+#print(position_list)
 
 modify_param_init(param_names,mean,l_max)
 

@@ -20,6 +20,10 @@
 	real(dl) :: Pann  ! Dark matter annihilation rate
     real(dl) :: FineSRat !Fine structure ratio (default 1)
     real(dl) :: EMassRat !ELectron mass ratio (default 1)
+    real(dl) :: mean_x_PCA !Position of the perturbation bump (default 0, basically equivalent to zero perturbation but better to set do_PCA to .false.)
+    real(dl) :: width_x_PCA !Width of the perturbation bump (default 1, doesn't really matter in the gaussian case)
+    logical :: do_PCA !boolean parameter to control whether to actually perturb the recombination history (default false, no perturbation)
+    real(dl) :: amplitude_sign  ! Integer +/-1, sign of the perturbation
     integer  :: Rfback
     end type RecombinationParams
 
@@ -43,6 +47,7 @@
         R%mean_x_PCA = Ini_Read_Double_File(Ini, 'Mean_PCA', 0.0D0) !Position in redshift space of the perturbation bump 
         R%width_x_PCA = Ini_Read_Double_File(Ini, 'Width_PCA', 1.0D0) !Width of the perturbation bump
 	R%do_PCA = Ini_Read_Logical_File(Ini, 'Do_PCA', .false.) !Whether to actually perturb the recombination history
+        R%amplitude_sign = Ini_Read_Double_File(Ini, 'Amplitude_sign', 1.0D0) ! sign of the perturbation
  
     end subroutine Recombination_ReadParams
 
@@ -105,7 +110,7 @@
     external rec_build_history_camb
 	
     call rec_build_history_camb(OmegaC, OmegaB, OmegaN, Omegav, h0inp, tcmb, yp, num_nu, & 
-    			Recomb%Pann, Recomb%FineSRat, Recomb%EMassRat, Recomb%mean_x_PCA, Recomb%width_x_PCA, Recomb%do_PCA, Recomb%Rfback)
+    			Recomb%Pann, Recomb%FineSRat, Recomb%EMassRat, Recomb%mean_x_PCA, Recomb%width_x_PCA, Recomb%amplitude_sign, Recomb%do_PCA, Recomb%Rfback)
 
     end subroutine Recombination_init
 

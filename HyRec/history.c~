@@ -136,7 +136,7 @@ void hyrec_init() {
 
 void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const double* OmegaN, const double* Omegav 
          ,const double* h0inp, const double* tcmb, const double* yp, const double* num_nu, const double* Pann
-         , const double* fsR, const double* meR, const double* mean_x_PCA, const double* width_x_PCA, const bool* do_PCA, const int* feedback) {
+         , const double* fsR, const double* meR, const double* mean_x_PCA, const double* width_x_PCA, const long* amplitude_sign, const bool* do_PCA, const int* feedback) {
  
   double h2 = *h0inp/100.;
   double z;
@@ -157,6 +157,7 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
   param.pann = *Pann * 1e-9; /*** DM annihilation ***/
   param.mean_x = *mean_x_PCA; /*Position in redshift at which gaussian bump in xe is introduced (2018)*/
   param.width_x = *width_x_PCA; /*width of the gaussian bump (2018)*/
+  param.amplitude_sign = *amplitude_sign; /*sign of the perurbation (+/-1, 2018)*/
   rec_set_derived_params(&param);
   
   if(*feedback > -1) { 
@@ -166,6 +167,7 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
   	 fprintf(stderr, " alpha/alpha_0 = %e \n", param.fsR);
          fprintf(stderr, " position of gaussian bump %e \n", param.mean_x);
          fprintf(stderr, " width of gaussian bump %e \n", param.width_x); 
+         fprintf(stderr, " sign of the perturbation %li \n", param.amplitude_sign); 
   	 fprintf(stderr, " ********HYREC******************** \n");
   }
 
@@ -181,18 +183,18 @@ void rec_build_history_camb_(const double* OmegaC, const double* OmegaB, const d
   allocate_rad_output(&rad, param.nzrt);
   
   rec_build_history(&param, &rate_table, &twog_params, xe_output, xrayleigh_output, delta_u_output, tm_output, rad.Dfnu, rad.Dfminus_Ly);
-  sprintf(file_name, "/home/bb510/Code/Rayleigh/visibilities/PCA/xe_pos_%07.2f.txt",param.mean_x);
+  sprintf(file_name, "/home/bb510/Code/Rayleigh/visibilities/PCA/xe_pos_%07.2f_%li.txt",param.mean_x, param.amplitude_sign);
   
   if (*do_PCA){
      fout_xe = fopen(file_name,"w");
      fprintf(stderr, " \n Perturbing recombination history ! \n");
      for (izz=0; izz<param.nz; izz++) {
          z = (1.+ZSTART)*exp(-DLNA*izz) - 1.;
-         xe_output[izz] += xe_output[izz]*delta_u_output[izz]*0.01;  /*if do_PCA, then actually modify the ionization fraction, including the gaussian bump (added Januray 2018)*/
+         xe_output[izz] = xe_output[izz] + param.amplitude_sign*xe_output[izz]*delta_u_output[izz]*0.01;  /*if do_PCA, then actually modify the ionization fraction, including the gaussian bump (added Januray 2018)*/
          fprintf(fout_xe,"%f      %f \n",z,xe_output[izz]);
-     fclose(fout_xe);
-     }
      
+     }
+     fclose(fout_xe);
   }
 
   free_rad_output(&rad);

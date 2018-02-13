@@ -11,7 +11,7 @@
       Include information on starting and ending redshit and timestep  
       Added May 2012: the period of Hydrogen recombination is evaluated right away so
       tables of radiation field can be reduced to only what is needed and memory is saved. 
-      Modified January 2018 (B. Beringue) modify rec_build_hisory to output ionized fraction of H and to ouput delta_u, gaussian bump in recombination history for a PCA analysis. And modify REC_COSMOPARAMS to include position (mean_x) and width (width_x) of the gaussian bump
+      Modified January 2018 (B. Beringue) modify rec_build_hisory to output ionized fraction of H and to ouput delta_u, gaussian bump in recombination history for a PCA analysis. And modify REC_COSMOPARAMS to include position (mean_x) and width (width_x) of the gaussian bump as well as (amplitude_sign) sign of the perturbation.
       
 ****/
 
@@ -27,6 +27,7 @@ typedef struct {
    /*Gaussian perturbation to Recombination history parameters (added Januray 2018)*/
    double mean_x;  /*position (in redshift space) of the bump*/
    double width_x;  /*width of the bump*/
+   double amplitude_sign;  /* +/-1, sign of the perturbation */
 
    /* Secondary parameters, to avoid recalculating every time */
    double nH0;                  /* density of hydrogen today in m^{-3} */  

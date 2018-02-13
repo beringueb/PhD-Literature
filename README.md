@@ -24,6 +24,9 @@ This repository contains some of the literature material used for my PhD at DAMT
 09/02/2018 : - Working version of PCA. Modified HyRec (history and hyrec) as well as CAMB (params.ini and HyRec.F90) in order to pass the position as width of the perturbation as parameters. Then modified HyRec to actually perturb the recombination history.
              - Created fisher_simple_PCA.py and PCA.py to actually perform the forecasts. Based on fisher_simple.py, have some issues for now with derivative of the covariance matrix (I took the relative amplitude of the perturbation (1%) whereas I think I should have taken the absolute one)
              - Need to output for each perturbation the perturbed recombination history in order to then be able to combine them linearly and get an idea of the shape of the most constrained modes.
+
+13/02/2018 : - Fixed errors from previous post. Amplitude is now correctly accounted for and each perturbation output correctly. However, it seems that there is an error in the output of the xe. so I recomputed them from scratch, which is faster anyway ... Need to further check that though ! 
+             - Test an implementation of +/-1 amplitude to correctly implement the derivative of the covariance matrix. check if i get the results from paper.
  
             
  
