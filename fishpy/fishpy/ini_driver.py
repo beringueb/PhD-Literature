@@ -23,7 +23,7 @@ class Experiment() :
         - lmin : ell from which to include data
         - NlTT : (lmax+1,n_freqs+2) temperature noise power spectra. Columns are ell, primary channel (combined freqs), freqs bands, ell from 0 to max lmax, units are ell*(ell+1.)/2pi
         - NlEE : (lmax+1,n_freqs+2) polarization noise power spectra. Columns are ell, primary channel (combined freqs), freqs bands, ell from 0 to max lmax, units are ell*(ell+1.)/2pi
-        - NlPP : (lmax+1,2) lensing noise power spectra. Columns are ell, primary channel (combined freqs), ell from 0 to max lmax, units are ell*(ell+1.)/2pi
+        - NlPP : (lmax+1,2) lensing noise power spectra. Columns are ell, primary channel (combined freqs), ell from 0 to max lmax, units are (ell*(ell+1.))**2/2pi
     """
     def __init__(self,name,include=True,include_P=True,include_lens=False,include_rayleigh=False,freqs,noise_pix_T,noise_pix_P,beam_fwhm,f_sky=1.,lmax_T=3000,lmax_P=5000,lmin=2):
         """Initialization of an experiment"""
@@ -114,7 +114,80 @@ class Experiment() :
         self.NlEE[:,1+len(self.freqs)] = 1./temp_E
         print("Done !")
         
+    def get_lensing(self, quicklens_loc,lensing_estimators = ["TT","EE","TE","TB","EB"]):
+        """ Method to get the lensing noise using quicklens module. Unfortunately for now, quicklens only works with python2 and we'd like to use python3 instead. 
+            - quicklens_loc : location of the quicklens main repository.
+            - lensing_estimators = ["TT","EE","TE","TB","EB"] : list of quadratic estimators to combine (inverse variance weigthing) for the lensing noise estimator, default is all of them but there is some non diagnoal contributions that should be looked for.
+        """
+        lmax = max(self.lmax_T,self.lmax_P)
+        #First save NlTT and NlEE to two files in quicklens/temp
+        if not os.path.exists(os.path.join(quicklens_loc,"temp")):
+            os.mkdir(os.path.join(quicklens_loc,"temp"))
+        if os.path.exists(os.path.join(quicklens_loc,"temp","NlTT.temp")):
+            os.remove(os.path.join(quicklens_loc,"temp","NlTT.temp"))
+        if os.path.exists(os.path.join(quicklens_loc,"temp","NlEE.temp")):
+            os.remove(os.path.join(quicklens_loc,"temp","NlEE.temp"))
+        if os.path.exists(os.path.join(quicklens_loc,"temp","NlPP.temp")):
+            os.remove(os.path.join(quicklens_loc,"temp","NlPP.temp"))
         
+        np.savetxt(os.path.join(quicklens_loc,"temp","NlTT.temp"), self.NlTT)
+        np.savetxt(os.path.join(quicklens_loc,"temp","NlTT.temp"), self.NlTT)
+        
+        newtext = ""
+        with open(os.path.join(quicklens_loc,"get_lensing.py"),"rw") as f:
+            for line in f:
+                if "lensing_list =" in line:
+                    line1,line2 = line.split('=')
+                    line2 = str(lensing_estimators)
+                    line = line1 + " = " + line2 + "\n"
+                newtext += line
+            f.write(newtext)
+        
+        try:
+            import subprocess 
+        except ImportError:
+            print("Module suprocess needs to be installed")
+        subprocess.call("python get_lensing.py"), shell = True, cwd = quicklens_loc)
+        
+        self.NlPP = np.loadtxt(os.path.join(quicklens_loc,"temp","NlPP.temp"))
+
+    def plot(self,list_freqs = None):
+        """ Method to plot TT and EE noise curves.
+            - list_freqs : if None plot primary channels, else plot frequencues fron list-freqs
+        """
+        
+        import matplotlib.pyplot as plt
+        ell = self.NlTT[:,0]
+        f, axs = plt.subplots(1,2, sharex = True, sharey = True)
+        color = ['c','b','k','y','g','r','gold','sienna','coral','navy']
+        if list_freqs is None:
+            axs[0,0].loglog(ell,NlTT[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
+            axs[0,1].loglog(ell,NlEE[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
+        else :
+            for fr in list_freqs:
+                i = self.freqs.index(fr)
+                axs[0,0].loglog(ell,NlTT[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                axs[0,1].loglog(ell,NlEE[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+        axs[0,0].set_title("N($\ell$) Temperature")
+        axs[0,1].set_title("N($\ell$) Polarization")
+        axs[0,0].set_ylabel("N($\ell$) [$\mu K^2$-SR] " )
+        axs[0,1].set_ylabel("N($\ell$) [$\mu K^2$-SR] " )
+        axs[0,0].set_xlabel("$\ell$")
+        axs[0,1].set_xlabel("$\ell$")
+        axs[0,0].set_ylim(1e-6,10)
+        axs[0,0].set_legend(loc = 'lower right')
+        axs[0,1].set_legend(loc = 'lower right')
+        axs[0,0].set_xlim(100, int(ell[-1]))
+        plt.suptitle("Noise power spectra for {}".format(self.name))
+        plt.show()
+                
+        
+        
+        
+       
+
+            
+            
         
         
     
