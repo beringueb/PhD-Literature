@@ -6,7 +6,7 @@ import os
 import configparser
 import numpy as np 
 
-class Experiment() : 
+class experiment() : 
     """ Class that contains information about a given CMB experiment : 
         - name : name of the experiment
         - include : whether to include the experiemnt in the total analysis
@@ -30,7 +30,7 @@ class Experiment() :
         
         self.name = name
         self.include = include
-        self.include_P = True
+        self.include_P = include_P
         self.include_lens = include_lens
         self.include_rayleigh = include_rayleigh
         self.freqs = freqs
@@ -56,7 +56,7 @@ class Experiment() :
             noise_tot = np.concatenate([ell,NlTT[:,1:],NlEE[:,1:]], axis = 1)
         header = "{} : ell, Primary, {} GHz + Polarization + Lensing".format(self.name,str(self.freqs))
         file_name = os.path.join(noise_root, "noise_{}_lensing.dat".format(self.name)
-        print("Writting noise power spectra to {} ...".format(file_name), end="   ")
+        print("Writting noise power spectra to {} ... ".format(file_name), end="")
         np.savetxt(file_name, noise_tot, header = header, fmt = "%d    " + 2*(len(self.freqs)+1)*"%.10e    " + "%.10e", newline = "\n")
         print("Done !")
         
@@ -64,7 +64,7 @@ class Experiment() :
         """ Reading noise power spectra from a file located at noise_root. Assumes file already exists."""
         
         file_name = os.path.join(noise_root,"noise_{}_lensing.dat".format(self.name))
-        print("Reading noise power spectra from {} ...".format(file_name), end = "    ")
+        print("Reading noise power spectra from {} ... ".format(file_name), end = "")
         noise_read = np.loadtxt(file_name)
         self.NlTT[:,:] = np.concatenate([noise_read[:,0],noise_read[:,1:len(self.freqs)+2]],axis = 1)
         self.NlEE[:,:] = np.concatenate([noise_read[:,0],noise_read[:,len(self.freqs)+2:-1]],axis = 1)

@@ -1,16 +1,10 @@
-import numpy as np
-
-ell = np.linspace(0,10,11)
-col1 = np.linspace(51,60,11)
-col2 = np.linspace(23,25,11).reshape(11,1)
-
-tot = np.concatenate([ell.reshape(11,1),col1.reshape(11,1),col2], axis = 1)
-numcol  = 2
-filename = "test.txt"
-print(np.shape(tot))
-
-tot[2:5,1:] = np.inf
-
-np.savetxt(filename,tot, fmt = "%d  " + 2*"%3.1f  ", newline = "\n")
-
-
+import time
+time_start = time.time()
+n = 10
+i = 1
+for x in range(n):
+    time.sleep(2.4)
+    time_tmp = time.time()
+    ETA = (n - i)*(time_tmp - time_start) / i
+    print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/n * 100, ETA // 60, ETA % 60), end = "\r" )
+    i +=1

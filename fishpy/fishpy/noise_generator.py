@@ -55,7 +55,7 @@ def SO(freqs,sensi,fsky,lmax):
             N_ell_T[:,i] *= np.exp(ell * (ell + 1.) * (LA_beam_widths[index] * np.pi/10800.) ** 2 / (8. * np.log(2)))
             i+=1
         else:
-            print("No {:d} FHz channel in SO, please check your ini file ...".format(fr))
+            print("No {:d} GHz channel in SO, please check your ini file ...".format(fr))
             
     ## calculate polarization noise power spectra ##
     AN_P = np.zeros((lmax+1,6))
@@ -140,12 +140,12 @@ def atmospheric_noise(freqs,noise_pix_T,beam_FWHM,lmax,alpha_temp, alpha_pol, el
         assert isinstance(ell_pivot_temp,list)
         assert isinstance(ell_pivot_pol,list)
     except AssertionError:
-        print("ell_pivot_temp and ell_pivot_pol must be a list ! I can have only one element if it's the same for all frequencies")
+        print("ell_pivot_temp and ell_pivot_pol must be a list ! It can have only one element if it's the same for all frequencies")
     try:
         assert len(freqs) == len(ell_pivot_temp) or len(ell_pivot_temp) == 1
         assert len(freqs) == len(ell_pivot_pol) or len(ell_pivot_pol) == 1
     except AssertionError:
-        print("Pivot scale must be either specified for all frequencies or only one element lists.")
+        print("Pivot scale must be either specified for all frequencies or only a one element list.")
         
     if len(ell_pivot_temp) == 1:
         ell_pivot_temp = [ell_pivot_temp[0] for i in range(len(freqs))]
@@ -226,11 +226,20 @@ def plot_noise(freqs,NlTT,NlEE):
         
     
 if __name__ == "__main__":
-    NlTT,NlEE = no_atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000)
+    #NlTT,NlEE = no_atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000)
     #NlTT,NlEE = atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000, alpha_pol = -1.4, alpha_temp = -3.5, ell_pivot_temp = [1000.], ell_pivot_pol = [700.], c_atmo_temp = [1800.,12000.,68000.,124000.,6e7,7e8], fsky = 0.24)
-    plot_noise([150,226,273,350,405,862],NlTT,NlEE)
-    np.savetxt("/home/bb510/Code/Rayleigh/noise/CCAT/NlTT_noatmo.dat",NlTT)
-    np.savetxt("/home/bb510/Code/Rayleigh/noise/CCAT/NlEE_noatmo.dat",NlEE)
+    freqs = [93,145,225,280]
+    lmax = 5000
+    for sensi in [0,1,2]:
+        for fsky in [0.1,0.2,0.4]:
+            NlTT,NlEE = SO(freqs,sensi,fsky,lmax)
+            np.savetxt("/home/bb510/Code/Rayleigh/noise/SO/NlTT_{:d}_{:3.1f}.dat".format(sensi,fsky),NlTT)
+            np.savetxt("/home/bb510/Code/Rayleigh/noise/SO/NlEE_{:d}_{:3.1f}.dat".format(sensi,fsky),NlEE)
+            print("Done for {} {}".format(sensi,fsky))
+    #plot_noise([150,226,273,350,405,862],NlTT,NlEE)
+    #np.savetxt("/home/bb510/Code/Rayleigh/noise/CCAT/NlTT_noatmo.dat",NlTT)
+    #np.savetxt("/home/bb510/Code/Rayleigh/noise/CCAT/NlEE_noatmo.dat",NlEE)
+    
         
         
         
