@@ -300,7 +300,7 @@ def run_CAMB(experiment):
         ETA = (n_file - i)*(time_tmp - time_start) / i
         print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/n * 100, ETA // 60, ETA % 60), end = "\r" )
         i += 1
-    print("Done in {:2.0f} min {:2.0f} secs".format(i/n * 100, ETA // 60, ETA % 60))
+    print("Done in {:2.0f} min {:2.0f} secs".format(ETA // 60, ETA % 60))
     
 
     

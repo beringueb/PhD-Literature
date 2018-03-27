@@ -51,7 +51,7 @@ def SO(freqs,sensi,fsky,lmax):
     for fr in freqs:
         if fr in LA_bands:
             index = LA_bands.tolist().index(fr)
-            N_ell_T[:,i] = ell * (ell + 1.) / (2.*np.pi) *( (weight_temp[index]) ** 2. * A_SR + AN_T[:,index])
+            N_ell_T[:,i] = ell * (ell + 1.) / (2.*np.pi) *( (weight_temp[index]) ** 2. * A_SR +0.* AN_T[:,index])
             N_ell_T[:,i] *= np.exp(ell * (ell + 1.) * (LA_beam_widths[index] * np.pi/10800.) ** 2 / (8. * np.log(2)))
             i+=1
         else:
@@ -60,13 +60,13 @@ def SO(freqs,sensi,fsky,lmax):
     ## calculate polarization noise power spectra ##
     AN_P = np.zeros((lmax+1,6))
     for i in range(len(LA_bands)):
-        AN_P[:,i] = (ell / f_knee_pol[i]) ** alpha_pol +1.
+        AN_P[:,i] = (ell / f_knee_pol[i]) ** alpha_pol + 1.
     N_ell_P = np.zeros((lmax+1,len(freqs)))
     i = 0
     for fr in freqs:
         if fr in LA_bands:
             index = LA_bands.tolist().index(fr)
-            N_ell_P[:,i] = ell * (ell + 1.) / (2.*np.pi) *  (weight_temp[index] * np.sqrt(2)) ** 2. * A_SR * AN_P[:,index]
+            N_ell_P[:,i] = ell * (ell + 1.) / (2.*np.pi) *  (weight_temp[index] * np.sqrt(2)) ** 2. * A_SR *(1. +0.* AN_P[:,index])
             N_ell_P[:,i] *= np.exp(ell * (ell + 1.) * (LA_beam_widths[index] * np.pi/10800.) ** 2 / (8. * np.log(2)) ) 
             i+=1
         else:
@@ -228,6 +228,7 @@ def plot_noise(freqs,NlTT,NlEE):
 if __name__ == "__main__":
     #NlTT,NlEE = no_atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000)
     #NlTT,NlEE = atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000, alpha_pol = -1.4, alpha_temp = -3.5, ell_pivot_temp = [1000.], ell_pivot_pol = [700.], c_atmo_temp = [1800.,12000.,68000.,124000.,6e7,7e8], fsky = 0.24)
+    #NlTT, NlEE = no_atmospheric_noise([30,44,70,100,143,217,353],[145,149,137,65,43,66,200],[3,23,14,10,7,5,5,5],5000,[np.inf,np.inf,450,103,81,134,406])
     freqs = [93,145,225,280]
     lmax = 5000
     for sensi in [0,1,2]:
@@ -237,8 +238,8 @@ if __name__ == "__main__":
             np.savetxt("/home/bb510/Code/Rayleigh/noise/SO/NlEE_{:d}_{:3.1f}.dat".format(sensi,fsky),NlEE)
             print("Done for {} {}".format(sensi,fsky))
     #plot_noise([150,226,273,350,405,862],NlTT,NlEE)
-    #np.savetxt("/home/bb510/Code/Rayleigh/noise/CCAT/NlTT_noatmo.dat",NlTT)
-    #np.savetxt("/home/bb510/Code/Rayleigh/noise/CCAT/NlEE_noatmo.dat",NlEE)
+    #np.savetxt("/home/bb510/Code/Rayleigh/noise/SO/NlTT_PLANCK.dat",NlTT)
+    #np.savetxt("/home/bb510/Code/Rayleigh/noise/SO/NlEE_PLANCK.dat",NlEE)
     
         
         

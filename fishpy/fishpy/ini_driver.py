@@ -131,7 +131,7 @@ class experiment() :
             os.remove(os.path.join(quicklens_loc,"temp","NlPP.temp"))
         
         np.savetxt(os.path.join(quicklens_loc,"temp","NlTT.temp"), self.NlTT)
-        np.savetxt(os.path.join(quicklens_loc,"temp","NlTT.temp"), self.NlTT)
+        np.savetxt(os.path.join(quicklens_loc,"temp","NlTT.temp"), self.NlTT) # NEED TO BE SURE THE FIRST LINES ARE NOT NAN OR INF
         
         newtext = ""
         with open(os.path.join(quicklens_loc,"get_lensing.py"),"rw") as f:
