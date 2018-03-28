@@ -6,12 +6,12 @@ import os
 import time
 
 
-class fisher_matrix():  
+class FisherMatrix():  
     """ Class that defines a fisher_matrix and methods useful to generate it, add two of them, reshuffle them, etc ... """
     
-    def __init__(self,setup,experiment):
+    def __init__(self,param_list,experiment):
         """ Initilaization of the fisher matrices with useful parameters
-            - setup :
+            - param_list :
             - experiment: 
         """ #TO COMPLETE
         self.experiment = experiment # experiment corresponding to the fisher matrix
@@ -63,15 +63,32 @@ class fisher_matrix():
         for param_i in self.param_list:
             j = 0
             for param_j in self.param_list:
-                self.fisher[i,j] = np.sum((2*l+1.)/2.*fish_trace(lmax,deriv[param_i],deriv[param_j],cov_fid)) 
-                i += 1
+                self.fisher[i,j] = self.experiment.fsky * np.sum((2*l+1.)/2.*fish_trace(lmax,deriv[param_i],deriv[param_j],cov_fid)) 
                 j += 1
             time_tmp = time.time()
             ETA = (len(self.param_list) - i)*(time_tmp - time_start) / i
             print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/n * 100, ETA // 60, ETA % 60), end = "\r" )
-        i += 1
-    print("Done in {:2.0f} min {:2.0f} secs".format(ETA // 60, ETA % 60))
-              
+            i += 1
+        print("Done in {:2.0f} min {:2.0f} secs".format(ETA // 60, ETA % 60))
+        
+    def reshuffle(self,new_param_list):
+        """ Method to reshuffle the fisher matrix witha a new parameter list 
+            - new_param_list : New order of the parameter list, has to be of the same length than old one, separate function to fix parameter or marginalize.
+        """
+        old_param_list = self.param_list
+        try : 
+            assert len(old_param_list) == len(new_param_list)
+        except AssertionError:
+            print("Reshuffling a fisher matrix requires a new parameter list of the same length than initial one. Use fix method to shorten the param list")
+        try :
+            assert set(new_param_list).issubset(old_param_list)
+        except AssertionError:
+            print("The new parameter list needs to contain the same parameters than the old one !")
+        indices = [old_param_list.index(param) for param in new_param_list]
+        tmp = self.fisher
+        self.fisher = temp[np.ix_(indices, indices)]
+        self.param_list = new_param_list
+                
 
         
 
@@ -81,7 +98,7 @@ def read_cl(data_root, lmax, n_freqs, parameter, direction=None):
     """ Function that gets the power spectra for a given parameter and a given direction. Uses pandas to speed up things a bit.
         - data_root : directory containing the power pectra.
         - n_freqs : number of frequencies used by the experiment
-        - parameter : parameter that we are interested in or 'fiducial' if we want to get fiducial data
+        - parameter : parameter that we are interested in or 'fiducial' if we want to get fiducial power spectra
         - direction : left or right. If None, then read fiducial power spectra.
         returns : - cls (lmax-1 * *n_freqs + 1 * n_freqs + 1 * 5 (TT+TE+EE+TP+PP) ) TP and PP data are only taken for primary channels (index 0)
     """
@@ -92,7 +109,7 @@ def read_cl(data_root, lmax, n_freqs, parameter, direction=None):
         print("pandas not found, using numpy instead")
         pandas = False
     
-    if direrction os not None:
+    if direrction is not None:
         file_name = os.path.join(data_root,"{}_{}_".format(parameter,direction)) 
     else:
         file_name = os.path.join(data_root,"{}_".format("fiducial"))
