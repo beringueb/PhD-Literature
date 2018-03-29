@@ -30,50 +30,49 @@ def SO(freqs,sensi,fsky,lmax):
     C_atmo_temp = np.array([200.,7.7,1800.,12000.,68000.,124000.]) # Array of atmospheric 1/f temp
     alpha_temp = -3.5
     ell_pivot = 1000.
-    
     ## calculate the survey area and time ##
     t = 5* 365. * 24. * 3600 #in secs, assuming a 5 years survey
     t = t * 0.2 ## retention after observing efficiency and cuts
     t = t* 0.85 ## a kluge for the noise non-uniformity of the map edges
-    A_SR = 4 * np.pi * fsky ## sky areas in Steridians
+    A_SR = 4. * np.pi * fsky ## sky areas in Steridians
     A_deg = A_SR * (180/np.pi)**2 ## sky area in square degrees
     A_arcmin = A_deg * 3600.
     
     ## calculate noise temperature spectra ##
-    ell = np.linspace(0,lmax,lmax+1)
+    ell = np.linspace(2,lmax,lmax-1)
     weight_temp = sensitivities[sensi,:] / np.sqrt(t) # experimental weight
     map_white_noise = weight_temp * np.sqrt(A_arcmin) # map level white noise level in muK-arcmin
-    AN_T = np.zeros((lmax+1,6)) # atmospheric noise contribution    
+    AN_T = np.zeros((lmax-1,6)) # atmospheric noise contribution    
     for i in range(len(LA_bands)):
         AN_T[:,i] = C_atmo_temp[i] * (ell/ell_pivot)**alpha_temp * A_SR / t / (2. * NTubes[i]) 
-    N_ell_T = np.zeros((lmax+1,len(freqs)))
+    N_ell_T = np.zeros((lmax-1,len(freqs)))
     i = 0
     for fr in freqs:
         if fr in LA_bands:
             index = LA_bands.tolist().index(fr)
-            N_ell_T[:,i] = ell * (ell + 1.) / (2.*np.pi) *( (weight_temp[index]) ** 2. * A_SR +0.* AN_T[:,index])
+            N_ell_T[:,i] = ell * (ell + 1.) / (2.*np.pi) *( (weight_temp[index]) ** 2. * A_SR + AN_T[:,index])
             N_ell_T[:,i] *= np.exp(ell * (ell + 1.) * (LA_beam_widths[index] * np.pi/10800.) ** 2 / (8. * np.log(2)))
             i+=1
         else:
             print("No {:d} GHz channel in SO, please check your ini file ...".format(fr))
             
     ## calculate polarization noise power spectra ##
-    AN_P = np.zeros((lmax+1,6))
+    AN_P = np.zeros((lmax-1,6))
     for i in range(len(LA_bands)):
         AN_P[:,i] = (ell / f_knee_pol[i]) ** alpha_pol + 1.
-    N_ell_P = np.zeros((lmax+1,len(freqs)))
+    N_ell_P = np.zeros((lmax-1,len(freqs)))
     i = 0
     for fr in freqs:
         if fr in LA_bands:
             index = LA_bands.tolist().index(fr)
-            N_ell_P[:,i] = ell * (ell + 1.) / (2.*np.pi) *  (weight_temp[index] * np.sqrt(2)) ** 2. * A_SR *(1. +0.* AN_P[:,index])
+            N_ell_P[:,i] = ell * (ell + 1.) / (2.*np.pi) *  (weight_temp[index] * np.sqrt(2)) ** 2. * A_SR * AN_P[:,index]
             N_ell_P[:,i] *= np.exp(ell * (ell + 1.) * (LA_beam_widths[index] * np.pi/10800.) ** 2 / (8. * np.log(2)) ) 
             i+=1
         else:
             print("No {:d} GHz channel in SO, please check your ini file ...".format(fr))
     
-    NlTT = np.concatenate([ell.reshape(lmax+1,1),np.zeros((lmax+1,1)),N_ell_T],axis = 1)
-    NlEE = np.concatenate([ell.reshape(lmax+1,1),np.zeros((lmax+1,1)),N_ell_P],axis = 1)
+    NlTT = np.concatenate([ell.reshape(lmax-1,1),np.zeros((lmax-1,1)),N_ell_T],axis = 1)
+    NlEE = np.concatenate([ell.reshape(lmax-1,1),np.zeros((lmax-1,1)),N_ell_P],axis = 1)
     
     return NlTT,NlEE 
     
@@ -96,18 +95,18 @@ def no_atmospheric_noise(freqs,noise_pix_T,beam_FWHM,lmax,noise_pix_P = None):
     
     if noise_pix_P is None:
         noise_pix_P = np.asarray(noise_pix_T) * np.sqrt(2)
-    ell = np.linspace(0,lmax,lmax+1)
-    N_ell_T = np.zeros((lmax+1,len(freqs)))
+    ell = np.linspace(2,lmax,lmax-1)
+    N_ell_T = np.zeros((lmax-1,len(freqs)))
     for i in range(len(freqs)):
         N_ell_T[:,i] = ell * (ell + 1.) / (2.*np.pi) * (noise_pix_T[i] * np.pi / 10800.) ** 2 
         N_ell_T[:,i] *= np.exp(ell * (ell + 1.) * (beam_FWHM[i] * np.pi / 10800.) ** 2 /(8. * np.log(2)) )
-    N_ell_P = np.zeros((lmax+1,len(freqs)))
+    N_ell_P = np.zeros((lmax-1,len(freqs)))
     for i in range(len(freqs)):
         N_ell_P[:,i] = ell * (ell + 1.) / (2.*np.pi) * (noise_pix_P[i] * np.pi / 10800.) ** 2 
         N_ell_P[:,i] *= np.exp(ell * (ell + 1.) * (beam_FWHM[i] * np.pi / 10800.) ** 2 /(8. * np.log(2)) )
         
-    NlTT = np.concatenate([ell.reshape(lmax+1,1),np.zeros((lmax+1,1)),N_ell_T],axis = 1)
-    NlEE = np.concatenate([ell.reshape(lmax+1,1),np.zeros((lmax+1,1)),N_ell_P],axis = 1)
+    NlTT = np.concatenate([ell.reshape(lmax-1,1),np.zeros((lmax-1,1)),N_ell_T],axis = 1)
+    NlEE = np.concatenate([ell.reshape(lmax-1,1),np.zeros((lmax-1,1)),N_ell_P],axis = 1)
     
     return NlTT, NlEE
     
@@ -145,7 +144,7 @@ def atmospheric_noise(freqs,noise_pix_T,beam_FWHM,lmax,alpha_temp, alpha_pol, el
         assert len(freqs) == len(ell_pivot_temp) or len(ell_pivot_temp) == 1
         assert len(freqs) == len(ell_pivot_pol) or len(ell_pivot_pol) == 1
     except AssertionError:
-        print("Pivot scale must be either specified for all frequencies or only a one element list.")
+        print("Pivot scales must be either specified for all frequencies or only a one element list.")
         
     if len(ell_pivot_temp) == 1:
         ell_pivot_temp = [ell_pivot_temp[0] for i in range(len(freqs))]
@@ -153,9 +152,7 @@ def atmospheric_noise(freqs,noise_pix_T,beam_FWHM,lmax,alpha_temp, alpha_pol, el
         ell_pivot_pol = [ell_pivot_pol[0] for i in range(len(freqs))]
     if noise_pix_P is None:
         noise_pix_P = np.asarray(noise_pix_T) * np.sqrt(2)
-    ell = np.linspace(0,lmax,lmax+1)
-    print(ell_pivot_temp)
-    print(ell_pivot_pol)
+    ell = np.linspace(2,lmax,lmax-1)
     
     t = 5* 365. * 24. * 3600 #in secs, assuming a 5 years survey
     t = t * 0.2 ## retention after observing efficiency and cuts
@@ -164,24 +161,24 @@ def atmospheric_noise(freqs,noise_pix_T,beam_FWHM,lmax,alpha_temp, alpha_pol, el
     A_deg = A_SR * (180/np.pi)**2 ## sky area in square degrees
     A_arcmin = A_deg * 3600.
     
-    AN_T = np.zeros((lmax+1,len(freqs))) # atmospheric noise contribution    
+    AN_T = np.zeros((lmax-1,len(freqs))) # atmospheric noise contribution    
     for i in range(len(freqs)):
         AN_T[:,i] = c_atmo_temp[i] * (ell/ell_pivot_temp[i])**alpha_temp * A_SR / t 
-    N_ell_T = np.zeros((lmax+1,len(freqs)))
+    N_ell_T = np.zeros((lmax-1,len(freqs)))
     for i in range(len(freqs)):
         N_ell_T[:,i] = ell * (ell + 1.) / (2.*np.pi) *((noise_pix_T[i] * np.pi / 10800.) ** 2  + AN_T[:,i])
         N_ell_T[:,i] *= np.exp(ell * (ell + 1.) * (beam_FWHM[i] * np.pi / 10800.) ** 2 /(8. * np.log(2)) )
     
-    AN_P = np.zeros((lmax+1,len(freqs)))
+    AN_P = np.zeros((lmax-1,len(freqs)))
     for i in range(len(freqs)):
         AN_P[:,i] = (ell / ell_pivot_pol[i]) ** alpha_pol + 1.
-    N_ell_P = np.zeros((lmax+1,len(freqs)))
+    N_ell_P = np.zeros((lmax-1,len(freqs)))
     for i in range(len(freqs)):
         N_ell_P[:,i] = ell * (ell + 1.) / (2.*np.pi) * (noise_pix_P[i] * np.pi / 10800.) ** 2 * AN_P[:,i]
         N_ell_P[:,i] *= np.exp(ell * (ell + 1.) * (beam_FWHM[i] * np.pi / 10800.) ** 2 /(8. * np.log(2)) ) 
         
-    NlTT = np.concatenate([ell.reshape(lmax+1,1),np.zeros((lmax+1,1)),N_ell_T],axis = 1)
-    NlEE = np.concatenate([ell.reshape(lmax+1,1),np.zeros((lmax+1,1)),N_ell_P],axis = 1)
+    NlTT = np.concatenate([ell.reshape(lmax-1,1),np.zeros((lmax-1,1)),N_ell_T],axis = 1)
+    NlEE = np.concatenate([ell.reshape(lmax-1,1),np.zeros((lmax-1,1)),N_ell_P],axis = 1)
     
     return NlTT, NlEE
         
@@ -219,12 +216,8 @@ def plot_noise(freqs,NlTT,NlEE):
     
     plt.show()
     
-    
-
         
-        
-        
-    
+            
 if __name__ == "__main__":
     #NlTT,NlEE = no_atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000)
     #NlTT,NlEE = atmospheric_noise([150,226,273,350,405,862],[6.,5.,6.,30.,70.,70000.],[1.4,1.0,0.8,0.6,0.5,0.3],10000, alpha_pol = -1.4, alpha_temp = -3.5, ell_pivot_temp = [1000.], ell_pivot_pol = [700.], c_atmo_temp = [1800.,12000.,68000.,124000.,6e7,7e8], fsky = 0.24)

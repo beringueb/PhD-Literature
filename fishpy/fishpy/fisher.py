@@ -27,7 +27,7 @@ class FisherMatrix():
         self.name = experiment.name + name[0:-2]
         self.fisher = np.zeros(( len(self.param_list), len(self.param_list) )) # fisher matrix per se
         
-    def write_to_txt(self, root)
+    def write_to_txt(self, root):
         """ Method to write the fisher matrix to a txt file in root
             - root : directory to which the txt file is written
         """
@@ -171,7 +171,7 @@ def compute_covariance(experiment,cls):
         else:
             cov = np.zeros((2,2))
             cov[:,0,0] = cls[:,0,0,0] + experiment.NlTT[:,1]
-    if experiment.include lensing:
+    if experiment.include_lensing:
         cov[:,-1,0] = cls[:,0,0,4] # TP part
         cov[:,0,-1] = cls[:,0,0,4] # TP part
         cov[:,-1,-1] = cls[:,0,0,3] #PP part

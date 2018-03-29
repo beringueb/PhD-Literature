@@ -17,8 +17,5 @@ list1 = config.get('general_parameters','parameters')
 print(lmax,include)
 print(isinstance(list1,str))
 
-print(list1[1:-1])
 
-def get_list_from_str(string):
-    n_elem = string.count(',') + 1
     

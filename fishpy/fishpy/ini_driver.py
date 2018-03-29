@@ -5,9 +5,9 @@
 import os
 import configparser
 import numpy as np
-from . import noise_generator as noise  
+import noise_generator as noise  
 
-QUICKLENS_LOC = "/home/bb510/code/quicklens/" # Location of quicklens, hard coded
+QUICKLENS_LOC = "/home/bb510/Code/quicklens/" # Location of quicklens, hard coded
 
 class Experiment() : 
     """ Class that contains information about a given CMB experiment : 
@@ -20,7 +20,7 @@ class Experiment() :
         - noise_pix_T : list of temperature noise per pixel (in muK-arcmin)
         - noise_pix_P : list of polarization noise per pixel (in muK-arcmin)
         - beam_fwhm : list of beam FWHM (in arcmin)
-        - f_sky : fraction of the sky covered by the experiment
+        - fsky : fraction of the sky covered by the experiment
         - lmax_T : ell up to which include temperature data
         - lmax_P : ell up to which include polarization data
         - lmin : ell from which to include data
@@ -28,7 +28,7 @@ class Experiment() :
         - NlEE : (lmax+1,n_freqs+2) polarization noise power spectra. Columns are ell, primary channel (combined freqs), freqs bands, ell from 0 to max lmax, units are ell*(ell+1.)/2pi
         - NlPP : (lmax+1,2) lensing noise power spectra. Columns are ell, primary channel (combined freqs), ell from 0 to max lmax, units are (ell*(ell+1.))**2/2pi
     """
-    def __init__(self,name,include=True,include_P=True,include_lens=False,include_rayleigh=False,freqs,noise_pix_T,noise_pix_P,beam_fwhm,f_sky=1.,lmax_T=3000,lmax_P=5000,lmin=2):
+    def __init__(self,name,include,include_P,include_lens,include_rayleigh,freqs,fsky=1.,lmax_T=3000,lmax_P=5000,lmin=2):
         """Initialization of an experiment"""
         lmax = max(lmax_T,lmax_P)
         self.name = name
@@ -37,12 +37,10 @@ class Experiment() :
         self.include_lens = include_lens
         self.include_rayleigh = include_rayleigh
         self.freqs = freqs
-        self.noise_pix_T = noise_pix_T
-        self.noise_pix_P = noise_pix_P
-        self.beam_fwhm = beam_fwhm
-        self.f_sky = f_sky
+        self.fsky = fsky
         self.lmax_T = lmax_T
         self.lmax_P = lmax_P
+        self.lmax = max(lmax_T,lmax_P)
         self.lmin = lmin
         self.NlTT = np.zeros((lmax-1,len(freqs)+2)) + np.inf
         self.NlEE = np.zeros((lmax-1,len(freqs)+2)) + np.inf
@@ -50,17 +48,15 @@ class Experiment() :
             
     def write_noise_file(self,noise_root):
         """ Writing noise power spectra into a file located at noise_root """
-        
+        if not os.path.exists(noise_root):
+            os.mkdir(noise_root)
         lmax = max(self.lmax_T, self.lmax_P)
-        ell = np.linspace(0,lmax,lmax+1).reshape(lmax+1,1)
-        if self.include_lens:
-            noise_tot = np.concatenate([ell,NlTT[:,1:],NlEE[:,1:],NlPP[:,1]], axis = 1)
-        else : 
-            noise_tot = np.concatenate([ell,NlTT[:,1:],NlEE[:,1:]], axis = 1)
+        ell = np.linspace(2,lmax,lmax-1).reshape(lmax-1,1)
+        noise_tot = np.concatenate([ell,self.NlTT[:,1:],self.NlEE[:,1:],self.NlPP[:,1].reshape(lmax-1,1)], axis = 1)
         header = "{} : ell, Primary, {} GHz + Polarization + Lensing".format(self.name,str(self.freqs))
-        file_name = os.path.join(noise_root, "noise_{}_lensing.dat".format(self.name)
+        file_name = os.path.join(noise_root, "noise_{}_lensing.dat".format(self.name))
         print("Writting noise power spectra to {} ... ".format(file_name), end="")
-        np.savetxt(file_name, noise_tot, header = header, fmt = "%d    " + 2*(len(self.freqs)+1)*"%.10e    " + "%.10e", newline = "\n")
+        np.savetxt(file_name, noise_tot, header = header, fmt = "%d    " + (2*(len(self.freqs)+1)+1)*"%.10e    ", newline = "\n")
         print("Done !")
         
     def read_noise_file(self,noise_root):
@@ -69,9 +65,13 @@ class Experiment() :
         file_name = os.path.join(noise_root,"noise_{}_lensing.dat".format(self.name))
         print("Reading noise power spectra from {} ... ".format(file_name), end = "")
         noise_read = np.loadtxt(file_name)
-        self.NlTT[:,:] = np.concatenate([noise_read[:,0],noise_read[:,1:len(self.freqs)+2]],axis = 1)
-        self.NlEE[:,:] = np.concatenate([noise_read[:,0],noise_read[:,len(self.freqs)+2:-1]],axis = 1)
-        self.NlPP[:,:] = np.concatenate([noise_read[:,0],noise_read[:,-1]],axis = 1)
+        indexTT = [i+1 for i in range(len(self.freqs)+1)]
+        indexTT.insert(0,0)
+        indexEE = [i+2+len(self.freqs) for i in range(len(self.freqs)+1)]
+        indexEE.insert(0,0)
+        self.NlTT[:,:] = noise_read[:,indexTT]
+        self.NlEE[:,:] = noise_read[:,indexEE]
+        self.NlPP[:,:] = noise_read[:,[0,-1]]
         print("Done ! ")
 
     def max_min(self):
@@ -79,9 +79,9 @@ class Experiment() :
         
         #Deleting contributions from ell < lmin
         
-        self.NlTT[0:self.l_min+1,1:] = np.inf
-        self.NlEE[0:self.l_min+1,1:] = np.inf
-        self.NlPP[0:self.l_min+1,1] = np.inf
+        self.NlTT[0:self.lmin-2,1:] = np.inf
+        self.NlEE[0:self.lmin-2,1:] = np.inf
+        self.NlPP[0:self.lmin-2,1] = np.inf
         
         #Deleting contributions from ell > lmax
         
@@ -95,7 +95,7 @@ class Experiment() :
 
     def combine_primary(self, list_freqs = 'all'):
         """ Combine frequency channels to get the the primary CMB noise
-            if list_freqs is all then all frequncy bands are used
+            if list_freqs is all then all frequency bands are used
             otherwise uses frequencies in list_freqs
         """
         
@@ -104,22 +104,23 @@ class Experiment() :
         except AssertionError : 
             print("list_freqs must be either a list (not a tuple) or 'all' ... ")
         lmax = max(self.lmax_T,self.lmax_P)    
-        temp_T = np.zeros((lmax+1,1))
-        temp_E = np.zeros((lmax+1,1))
+        temp_T = np.zeros(lmax-1)
+        temp_E = np.zeros(lmax-1)
         if list_freqs == 'all':
             list_freqs = self.freqs
-        print("Combining {} GHz channels into primary CMB noise ...".format(str(list_freqs)), end = "    ")
+        print("Combining {} GHz channels into primary CMB noise ... ".format(str(list_freqs)), end = "")
         for freq in list_freqs:
             index = list_freqs.index(freq)
             temp_T += 1./self.NlTT[:,index+2]
-            temp_E += 1./self.NlPP[:,index + 2 + len(self.freqs)]
+            temp_E += 1./self.NlEE[:,index+2]
         self.NlTT[:,1] = 1./temp_T
-        self.NlEE[:,1+len(self.freqs)] = 1./temp_E
+        self.NlEE[:,1] = 1./temp_E
         print("Done !")
         
         
-    def get_noise(self):
+    def get_noise(self, list_freqs = 'all'):
         """ Method to get the noise power spectra using function in noise_genrator
+            - list_freqs is all then all frequency bands are used otherwise uses frequencies in list_freqs 
         """
         lmax = max(self.lmax_T,self.lmax_P)
         if self.name == 'SO':
@@ -134,53 +135,56 @@ class Experiment() :
             NlTT, NlEE = noise.atmospheric_noise(self.freqs,self.noise_pix_T,self.beam_FWHM,lmax,self.alpha_temp, self.alpha_pol, self.ell_pivot_temp, self.ell_pivot_pol, self.c_atmo_temp, self.fsky, self.noise_pix_P)
             print("Using atmospheric noise model for {}".format(self.name))
         else:
-            NlTT, NlEE = noise.noatmospheric_noise(self.freqs,self.noise_pix_T,self.beam_FWHM,lmax,self.noise_pix_P) 
+            NlTT, NlEE = noise.no_atmospheric_noise(self.freqs,self.noise_pix_T,self.beam_FWHM,lmax,self.noise_pix_P) 
             print("Using simple noise model (no atmosphere) for {}".format(self.name))
         
         self.NlTT = NlTT
-        if self.include_P:
-            self.NlEE = NlEE
-        if self.include_lens:                
-            self.get_lensing(QUICKLENS_LOC,self.lensing_estimators)   
+        self.NlEE = NlEE
+        self.combine_primary(list_freqs)
+        if self.include_lens:
+            if hasattr(self,lensing_estimators):                
+                self.get_lensing(QUICKLENS_LOC,self.lensing_estimators)
+            else:
+                self.get_lensing()
                       
 
-        
-        
+                
     def get_lensing(self,lensing_estimators = ["TT","EB"]):
         """ Method to get the lensing noise using quicklens module. Unfortunately for now, quicklens only works with python2 and we'd like to use python3 instead. 
             - lensing_estimators = ["TT","EE","TE","TB","EB"] : list of quadratic estimators to combine (inverse variance weigthing) for the lensing noise estimator, default is all of them but there is some non diagnoal contributions that should be looked for.
         """
         lmax = max(self.lmax_T,self.lmax_P)
         #First save NlTT and NlEE to two files in quicklens/temp
-        if not os.path.exists(os.path.join(QUICKLENS_LOC,"temp")):
-            os.mkdir(os.path.join(QUICKLENS_LOC,"temp"))
-        if os.path.exists(os.path.join(QUICKLENS_LOC,"temp","NlTT.temp")):
-            os.remove(os.path.join(QUICKLENS_LOC,"temp","NlTT.temp"))
-        if os.path.exists(os.path.join(QUICKLENS_LOC,"temp","NlEE.temp")):
-            os.remove(os.path.join(QUICKLENS_LOC,"temp","NlEE.temp"))
-        if os.path.exists(os.path.join(QUICKLENS_LOC,"temp","NlPP.temp")):
-            os.remove(os.path.join(QUICKLENS_LOC,"temp","NlPP.temp"))
+        if not os.path.exists(os.path.join(QUICKLENS_LOC,"temp_fishpy")):
+            os.mkdir(os.path.join(QUICKLENS_LOC,"temp_fishpy"))
+        if os.path.exists(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlTT.temp")):
+            os.remove(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlTT.temp"))
+        if os.path.exists(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlEE.temp")):
+            os.remove(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlEE.temp"))
+        if os.path.exists(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlPP.temp")):
+            os.remove(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlPP.temp"))
         
-        np.savetxt(os.path.join(QUICKLENS_LOC,"temp","NlTT.temp"), self.NlTT)
-        np.savetxt(os.path.join(QUICKLENS_LOC,"temp","NlTT.temp"), self.NlTT) # NEED TO BE SURE THE FIRST LINES ARE NOT NAN OR INF
+        np.savetxt(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlTT.temp"), self.NlTT)
+        np.savetxt(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlEE.temp"), self.NlEE) 
         
         newtext = ""
-        with open(os.path.join(QUICKLENS_LOC,"get_lensing.py"),"rw") as f:
+        with open(os.path.join(QUICKLENS_LOC,"get_lensing.py"),"r") as f:
             for line in f:
                 if "lensing_list =" in line:
                     line1,line2 = line.split('=')
                     line2 = str(lensing_estimators)
                     line = line1 + " = " + line2 + "\n"
                 newtext += line
+        with open(os.path.join(QUICKLENS_LOC,"get_lensing.py"),"w") as f:
             f.write(newtext)
         
         try:
             import subprocess 
         except ImportError:
             print("Module suprocess needs to be installed")
-        subprocess.call("python get_lensing.py"), shell = True, cwd = QUICKLENS_LOC)
+        subprocess.call("python {}".format(os.path.join(QUICKLENS_LOC,"get_lensing.py")), shell = True, cwd = QUICKLENS_LOC)
         
-        self.NlPP = np.loadtxt(os.path.join(QUICKLENS_LOC,"temp","NlPP.temp"))
+        self.NlPP = np.loadtxt(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlPP.temp"))
         
         
         
@@ -195,13 +199,15 @@ class Experiment() :
         f, axs = plt.subplots(1,2, sharex = True, sharey = True)
         color = ['c','b','k','y','g','r','gold','sienna','coral','navy']
         if list_freqs is None:
-            axs[0].loglog(ell,NlTT[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
-            axs[1].loglog(ell,NlEE[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
+            axs[0].loglog(ell,self.NlTT[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
+            axs[1].loglog(ell,self.NlEE[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
         else :
+            k = 0    
             for fr in list_freqs:
                 i = self.freqs.index(fr)
-                axs[0].loglog(ell,NlTT[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
-                axs[1].loglog(ell,NlEE[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                axs[0].loglog(ell,self.NlTT[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                axs[1].loglog(ell,self.NlEE[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                k+=1
         axs[0].set_title("N($\ell$) Temperature")
         axs[1].set_title("N($\ell$) Polarization")
         axs[0].set_ylabel("N($\ell$) [$\mu K^2$-SR] " )
@@ -209,8 +215,8 @@ class Experiment() :
         axs[0].set_xlabel("$\ell$")
         axs[1].set_xlabel("$\ell$")
         axs[0].set_ylim(1e-6,10)
-        axs[0].set_legend(loc = 'lower right')
-        axs[1].set_legend(loc = 'lower right')
+        axs[0].legend(loc = 'upper right')
+        axs[1].legend(loc = 'upper right')
         axs[0].set_xlim(10, int(ell[-1]))
         plt.suptitle("Noise power spectra for {}".format(self.name))
         plt.show()
@@ -225,7 +231,7 @@ class CombinedExperiment():
         - include_lens : whether to include lensing potential information from these experiments (include_lens1 or include_lens2 or ...)
         - include_rayleigh : whether to include to Rayleigh scattering signal from these experiments (include_rayleigh1 or include_rayleigh2 or ...)
         - freqs : list of frequency bands for these combined experiments, concatenation of frequency channels for experiments that include rayleigh
-        - f_sky : fraction of the sky covered by the experiments, min of sky fractions of considered experiments
+        - fsky : fraction of the sky covered by the experiments, min of sky fractions of considered experiments
         - lmax_T : ell up to which include temperature data, max of lmax_T of considered experiments
         - lmax_P : ell up to which include polarization data, max of lmax_P of considered experiments
         - lmin : ell from which to include data, max of lmin of considered experiments
@@ -234,16 +240,18 @@ class CombinedExperiment():
 Inverse variance sum of NlEE for combined experiments that include polarization.
         - NlPP : (lmax+1,2) lensing noise power spectra. Columns are ell, primary channel (combined freqs), ell from 0 to max lmax, units are (ell*(ell+1.))**2/2pi. Inverse variance sum of NlPP for combined experiments that include lensing.
     """
-    def __init__(self, list_experiments):
-        """ Initialization of a combined experiment
+    def __init__(self, list_experiments,fsky):
+        """ Initialization of a combined experimentnumpy.core._internal.AxisError: axis 1 is out of bounds for array of dimension 1
             - list_experiments : list of the experiments to combine.
+            - fsky : fraction of the sky covered by all the experiments in list_experiments
         """
         self.list_experiments = list_experiments
-        
+        self.fsky = fsky
         name = ''
         for expe in list_experiments:
             name += '{} + '.format(expe.name)
         self.name = name[0:-3] # name of the experiment
+        print("Combining {} on {:3.1f}% of the sky.".format(self.name,self.fsky*100))
         
         include_P = False
         include_lens = False
@@ -251,7 +259,7 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         for expe in list_experiments:
             include_P = include_P or expe.include_P
             include_lens = include_lens or expe.include_lens
-            include_rayleigh = include_rayleigh or exper.include_rayleigh
+            include_rayleigh = include_rayleigh or expe.include_rayleigh
         self.include_P = include_P
         self.include_lens = include_lens
         self.include_rayleigh = include_rayleigh
@@ -260,14 +268,16 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         for expe in list_experiments:
             if expe.include_rayleigh:
                 freqs += expe.freqs  # include the freqs of an experiment only if include scattering from that scattering
-        self.freqs = freqs.sort()
+        
+        self.freqs = freqs
+        self.freqs.sort()
         
         self.lmax_T = max([expe.lmax_T for expe in list_experiments])
         self.lmax_P = max([expe.lmax_P for expe in list_experiments])
         self.lmin = min([expe.lmin for expe in list_experiments])
-        self.fsky = min([expe.fsky for expe in list_experiments])
-        
+
         lmax = max(self.lmax_T,self.lmax_P)
+
         NlTT = np.zeros((lmax-1,2 + len(self.freqs))) 
         NlEE = np.zeros((lmax-1,2 + len(self.freqs))) 
         noiseTT_tmp = np.zeros((lmax-1,1)) + 1E-15
@@ -275,8 +285,8 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         NlPP = np.zeros((lmax-1,2)) + np.inf
         i = 0
         for freq in self.freqs:
-            noiseTT_tmp = np.zeros((lmax-1,1)) + 1E-15
-            noiseEE_tmp = np.zeros((lmax-1,1)) + 1E-15
+            noiseTT_tmp = np.zeros(lmax-1) + 1E-15
+            noiseEE_tmp = np.zeros(lmax-1) + 1E-15
         
             #look in each experiment if there is a channel at that frequency +/- 10 GHz (arbitrary for now, maybe some reasons for that ?)
             for expe in list_experiments:
@@ -285,17 +295,17 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
                 except ValueError:
                     pass #freq not in this experiment ... 
                 else:
-                    noiseTT_tmp[0:expe.lmax_T] += 1./(self.fsky/expe.fsky * expe.NlTT[:,2+ind]) #scaling with fsky
-                    noiseEE_tmp[0:expe.lmax_P] += 1./(self.fsky/expe.fsky * expe.NlEE[:,2+ind])
+                    noiseTT_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlTT[:,2+ind]) #scaling with fsky
+                    noiseEE_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlEE[:,2+ind])
             NlTT[:,2+i] += 1./noiseTT_tmp
             NlEE[:,2+i] += 1./noiseEE_tmp
-        noiseTT_tmp = np.zeros((lmax-1,1)) + 1E-15
-        noiseEE_tmp = np.zeros((lmax-1,1)) + 1E-15
-        noisePP_tmp = np.zeros((lmax-1,1)) + 1E-15    
+        noiseTT_tmp = np.zeros(lmax-1) + 1E-15
+        noiseEE_tmp = np.zeros(lmax-1) + 1E-15
+        noisePP_tmp = np.zeros(lmax-1) + 1E-15    
         for expe in list_experiments:
-            noiseTT_tmp[0:expe.lmax_T-1] += 1./(self.fsky/expe.fsky * expe.NlTT[:,1])
-            noiseEE_tmp[0:expe.lmax_P-1] += 1./(self.fsky/expe.fsky * expe.NlEE[:,1])
-            noisePP_tmp[0:max(exp.lmax_T,expe.lmax_P)-1] += 1./(self.fsky/expe.fsky * expe.NlPP[:,1])
+            noiseTT_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlTT[:,1])
+            noiseEE_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlEE[:,1])
+            noisePP_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlPP[:,1])
         NlTT[:,1] = 1./noiseTT_tmp
         NlEE[:,1] = 1./noiseEE_tmp
         NlPP[:,1] = 1./noisePP_tmp
@@ -310,17 +320,20 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         """
         
         import matplotlib.pyplot as plt
+        
         ell = self.NlTT[:,0]
         f, axs = plt.subplots(1,2, sharex = True, sharey = True)
         color = ['c','b','k','y','g','r','gold','sienna','coral','navy']
         if list_freqs is None:
-            axs[0].loglog(ell,NlTT[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
-            axs[1].loglog(ell,NlEE[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
+            axs[0].loglog(ell,self.NlTT[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
+            axs[1].loglog(ell,self.NlEE[:,1]*2*np.pi/ell/(ell+1), label = "Primary channel")
         else :
+            k = 0
             for fr in list_freqs:
                 i = self.freqs.index(fr)
-                axs[0].loglog(ell,NlTT[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
-                axs[1].loglog(ell,NlEE[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                axs[0].loglog(ell,self.NlTT[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                axs[1].loglog(ell,self.NlEE[:,2+i]*2*np.pi/ell/(ell+1), c = color[k], label = "{:d} GHz".format(fr))
+                k+=1
         axs[0].set_title("N($\ell$) Temperature")
         axs[1].set_title("N($\ell$) Polarization")
         axs[0].set_ylabel("N($\ell$) [$\mu K^2$-SR] " )
@@ -328,8 +341,8 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         axs[0].set_xlabel("$\ell$")
         axs[1].set_xlabel("$\ell$")
         axs[0].set_ylim(1e-6,10)
-        axs[0].set_legend(loc = 'lower right')
-        axs[1].set_legend(loc = 'lower right')
+        axs[0].legend(loc = 'upper right')
+        axs[1].legend(loc = 'upper right')
         axs[0].set_xlim(10, int(ell[-1]))
         plt.suptitle("Noise power spectra for {}".format(self.name))
         plt.show()
@@ -349,16 +362,19 @@ class Setup():
         - l_boost : CAMB parameter, keep more terms in the hierarchy evolution
         - boost : CAMB parameter, increase accuracy_boost to decrease time steps, use more k values
     """
-    def __init__(self,param_list,noise_root,data_root,list_experiments, use_BBN, mass_neutrinos = 60., l_boost = 1, boost = 1):
+    def __init__(self,param_list,noise_root,data_root, use_BBN, mass_neutrinos = 60., l_boost = 1, boost = 1):
         """ Initialization """
         self.param_list = param_list
         self.noise_root = noise_root
         self.data_root = data_root
-        self.list_experiments = list_experiments 
         self.use_BBN = use_BBN
         self.mass_neutrinos = mass_neutrinos
         self.l_boost = l_boost
         self.boost = boost
+        
+    def get_list_experiments(self, list_experiments):
+        """ Method to get the list of combined experiment in the setup. Separated from the rest of the __init__ method to make parsing easier"""
+        self.list_experiments = list_experiments
         self.lmax = max([max(expe.lmax_T,expe.lmax_P) for expe in list_experiments])
     
     def get_fiducial(self, fid_file):
@@ -367,10 +383,10 @@ class Setup():
         """  
         fid = {}
         step = {}
-        with open(fid_file,'w') as f:
+        with open(fid_file,'r') as f:
             for line in f:
-                 if '#' in line:
-                    pass
+                 if '####' in line:
+                    break
                  else:  
                     name,fiducial_value,step_size = line.split('|')
                     fid[name.strip()] = float(fiducial_value)
@@ -392,60 +408,118 @@ def parser(inifile):
     config.read(inifile)        
     sections = config.sections()    
     
+    ## READING SETUP CONFIGURATION ##
+    setup_sec = sections[0]
+    param_list = [param for param in config.get(setup_sec,'parameters').split(',')]
+    print(param_list)
+    try:
+        assert set(param_list).issubset(['H0','A_s','109A_s','ln10A_s','N_eff','Y_He','ombh2','omch2','theta_MC','n_s','tau'])
+    except AssertionError:
+        print("Some parameters are invalid. Check you ini file")
+    noise_root = config.get(setup_sec,'noise_root')
+    data_root = config.get(setup_sec,'data_root')
+    use_BBN = config.getfloat(setup_sec,'use_BBN')
+    if config.has_option(setup_sec,'mass_neutrinos'):
+        mass_neutrinos = config.getfloat(setup_sec,'mass_neutrinos')
+    else:
+        mass_neutrinos = 60.
+    if config.has_option(setup_sec,'CAMB_l_boost'):
+        l_boost = config.getfloat(setup_sec,'CAMB_l_boost')
+    else:
+        l_boost = 1
+    if config.has_option(setup_sec,'CAMB_accuracy_boost'):
+        boost = config.getfloat(setup_sec,'CAMB_accuracy_boost')
+    else:
+        boost = 1    
+    
+    setup = Setup(param_list,noise_root,data_root, use_BBN, mass_neutrinos, l_boost, boost)
+            
+    list_experiments_included = []
+       
     ## READING EXPERIMENTS CONFIGURATIONS ##
     
     for experiment in sections[1:]:
+        atmo_noise = False
+        SO = False
         name = config.get(experiment,'name')
-        fsky = config.get(experiment,'fsky')
+        fsky = config.getfloat(experiment,'fsky')
         include = config.getboolean(experiment,'include')
-        include_P = config.getboolean(experiment,'include_polarization')
-        include_lens = config.getboolean(experiment,'include_lensing')
+        include_P = config.getboolean(experiment,'polarization')
+        include_lens = config.getboolean(experiment,'lensing')
+        include_rayleigh = config.getboolean(experiment,'rayleigh')
         lmin = config.getint(experiment,'lmin')
         lmax_T = config.getint(experiment,'lmax_T')
         lmax_P = config.getint(experiment,'lmax_P')
-        freqs = [ int(fr) for fr in config.get(experiment,'freqs').split(',')]
-        if congig.has_option(experiment,'noise_pixel_T'):
-            noise_pix_T = [float(noise) for noise in config.get(experiment,'noise_pixel_T').split(',')]
-        if congig.has_option(experiment,'noise_pixel_P'):
-            noise_pix_P = [float(noise) for noise in config.get(experiment,'noise_pixel_P').split(',')]
-        if congig.has_option(experiment,'beam_FWHM'):
-            beam_FWHM = [float(beam) for noise in config.get(experiment,'beam_FWHM').split(',')]
-        if congig.has_option(experiment,'alpha_temp'):
-            alpha_temp = [float(alpha) for noise in config.get(experiment,'alpha_temp').split(',')]
-         if congig.has_option(experiment,'alpha_pol'):
-            alpha_pol = [float(alpha) for noise in config.get(experiment,'alpha_pol').split(',')]
-            
-            
-            
-            
-self.freqs,self.noise_pix_T,self.beam_FWHM,lmax,self.alpha_temp, self.alpha_pol, self.ell_pivot_temp, self.ell_pivot_pol, self.c_atmo_temp, self.fsky, self.noise_pix_P
+        freqs = [ int(fr) for fr in config.get(experiment,'freqs').split(',')]      
+        if config.has_option(experiment,'sensibility'):
+            sensibility = config.getint(experiment,'sensibility')
+            SO = True
+        else:
+            if config.has_option(experiment,'noise_pixel_T'):
+                noise_pix_T = [float(noise) for noise in config.get(experiment,'noise_pixel_T').split(',')]
+            if config.has_option(experiment,'noise_pixel_P'):
+                noise_pix_P = [float(noise) for noise in config.get(experiment,'noise_pixel_P').split(',')]
+            else:
+                noise_pix_P = None
+            if config.has_option(experiment,'beam_FWHM'):
+                beam_FWHM = [float(beam) for beam in config.get(experiment,'beam_FWHM').split(',')]
+        #Parameters for atmospheric noise, all must be specified !
+        if config.has_option(experiment,'alpha_temp'):
+            atmo_noise = True
+            alpha_temp = [float(alpha) for alpha in config.get(experiment,'alpha_temp').split(',')]
+            if config.has_option(experiment,'alpha_pol'):
+                alpha_pol = [float(alpha) for alpha in config.get(experiment,'alpha_pol').split(',')]
+            else : 
+                print("alpha_pol must be defined when using atmospheric noise")
+            if config.has_option(experiment,'ell_pivot_temp'):
+                ell_pivot_temp = [int(ell) for ell in config.get(experiment,'ell_pivot_temp').split(',')]
+            else : 
+                print("ell_pivot_temp must be defined when using atmospheric noise")
+            if config.has_option(experiment,'ell_pivot_pol'):
+                ell_pivot_pol = [int(ell) for ell in config.get(experiment,'ell_pivot_pol').split(',')]         
+            else : 
+                print("ell_pivot_pol_pol must be defined when using atmospheric noise")
+            if config.has_option(experiment,'c_atmo_temp'):
+                c_atmo_temp = [float(c_atmo) for c_atmo in config.get(experiment,'c_atmo_temp').split(',')]
+            else : 
+                print("c_atmo_temp must be defined when using atmospheric noise"  ) 
+                    
+        expe = Experiment(name,include,include_P,include_lens,include_rayleigh,freqs,fsky,lmax_T,lmax_P,lmin)
+        if config.has_option(experiment,'lensing_estimators'):
+            expe.lensing_estimators = config.getint(experiment,'lensing_estimators') 
+        if config.has_option(experiment,'update'):
+            expe.update = config.getboolean(experiment,'update')
+        else:
+            expe.update = True     
+        if atmo_noise:
+            expe.alpha_temp = alpha_temp
+            expe.alpha_pol = alpha_pol
+            expe.ell_pivot_temp = ell_pivot_temp
+            expe.ell_pivot_pivot = ell_pivot_pol
+            expe.c_atmo_temp = c_atmo_temp
+        if SO: 
+            expe.sensibility = sensibility
+        else:
+            expe.noise_pix_T = noise_pix_T
+            expe.noise_pix_P = noise_pix_P
+            expe.beam_FWHM = beam_FWHM
+        if include:
+            list_experiments_included.append(expe)
         
-        
-        
-            
-                  
-        
-            
+    
+    return setup,list_experiments_included
     
     
-        
-        
-       
-
-            
-            
-        
-        
+if __name__ == "__main__":
     
-    
+    setup, list_experiments_included  = parser('../input/test_in.ini')
+    for expe in list_experiments_included:
+        if expe.include:
+            #expe.get_noise()
+            #expe.combine_primary()
+            #expe.get_lensing()
+            #expe.write_noise_file(setup.noise_root)
+            expe.read_noise_file(setup.noise_root)
+            expe.max_min()
+            expe.plot([27,39,93,145,225,280])
 
-
-
-
-
-
-
-
-sections = config.sections()
-
-print(sections)

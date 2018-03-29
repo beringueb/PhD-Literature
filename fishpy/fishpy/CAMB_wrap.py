@@ -40,7 +40,7 @@ def init_file(setup):
         YHe_tmp = setup.use_BBN #Y_p is fixed but not by BBN consistency
      
     if 'ln10A_s' in parameter_list:
-        As = np.exp(setup.fiducial['ln10As'])*1E-10
+        As = np.exp(setup.fiducial['ln10A_s'])*1E-10
     elif '109A_s' in parameter_list:
         As = setup.fiducial['109A_s']*1E-9
     else:
@@ -64,7 +64,7 @@ def init_file(setup):
                 line2 = '=  {} \n'.format(pars_fid.omegab)
                 line = line1 + line2
             if 'omch2' in line and not('#' in line):
-                line1,line2 - line.split('=')
+                line1,line2 = line.split('=')
                 line2 = '=  {} \n'.format(pars_fid.omegac)
                 line = line1 + line2
             if 'omnuh2' in line and not('#' in line):
@@ -140,7 +140,7 @@ def parameter_files(setup, experiment):
         for f in list_file:
             os.unlink(os.path.join(CAMB_ROOT,"{}_inifiles".format(experiment.name),f))
         try:
-            assert not os.listdir(os.path.join(CAMB_ROOT,"{}_inifiles".format(experiment.name))):
+            assert not os.listdir(os.path.join(CAMB_ROOT,"{}_inifiles".format(experiment.name)))
         except AssertionError:
             print("ini files directory for {} is not empty, something is wrong !".format(experiment.name))
      
@@ -152,7 +152,7 @@ def parameter_files(setup, experiment):
         for f in list_file:
             os.unlink(os.path.join(setup.data_root,experiment.name,f))
         try:
-            assert not os.listdir(os.path.join(setup.data_root,experiment.name)):
+            assert not os.listdir(os.path.join(setup.data_root,experiment.name))
         except AssertionError:
             print("data directory for {} is not empty, something is wrong !".format(experiment.name))
     
@@ -199,7 +199,7 @@ def parameter_files(setup, experiment):
                 As = temp['109A_s']*1E-9
             else:
                 As = temp['A_s']
-             pars_temp.set_cosmology(H0=H0_tmp,cosmomc_theta=cosmomc_theta_tmp,ombh2=temp['ombh2'],omch2=temp['omch2'],mnu = setup.mass_neutrinos/1000.,nnu=temp['N_eff'],tau=temp['tau'],YHe=YHe_tmp)
+            pars_temp.set_cosmology(H0=H0_tmp,cosmomc_theta=cosmomc_theta_tmp,ombh2=temp['ombh2'],omch2=temp['omch2'],mnu = setup.mass_neutrinos/1000.,nnu=temp['N_eff'],tau=temp['tau'],YHe=YHe_tmp)
              
             param_file = os.path.join(CAMB_ROOT,"{}_inifiles".format(experiment.name),"params_fiducial.ini")
             new_file = ''
