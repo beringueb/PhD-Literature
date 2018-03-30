@@ -75,7 +75,7 @@ def init_file(setup):
                 line2 = '=  {} \n'.format(pars_fid.omegak)
                 line = line1 + line2
             if 'massless_neutrinos' in line and not('#' in line):
-                line1,line2 = line.split()
+                line1,line2 = line.split('=')
                 line2 = '=  {} \n'.format(pars_fid.num_nu_massless)
                 line = line1 + line2
             if 'massive_neutrinos' in line and not('#' in line):
@@ -104,19 +104,19 @@ def init_file(setup):
                 line = line1 + line2
             if 'output_root' in line and not('#' in line):
                 line1,line2 = line.split('=')
-                line2 = '  {} \n'.format(setup.data_root)
+                line2 = '=  {} \n'.format(setup.data_root)
                 line = line1 + line2
             if 'l_accuracy_boost' in line and not('#' in line):
                 line1,line2 = line.split('=')
-                line2 = '{}  \n'.format(setup.l_boost)
+                line2 = '=  {}  \n'.format(setup.l_boost)
                 line = line1 + line2
-            if 'accuracy_boost' in line and not('#' in line):
+            if 'accuracy_boost' in line and not('#' in line) and not('l_accuracy_boost' in line):
                 line1,line2 = line.split('=')
                 line2 = '=  {} \n'.format(setup.boost)
                 line = line1 + line2
             if 'lensed_output_file' in line and not('#' in line):
                 line1,line2 = line.split('=')
-                line2 = '  {} \n'.format("scalCls_lensed") 
+                line2 = '=  {} \n'.format("scalCls_lensed") 
                 line = line1 + line2
             if 'lens_potential_output_file' in line and not('#' in line):
                 line1,line2 = line.split('=')
@@ -163,7 +163,7 @@ def parameter_files(setup, experiment):
         for line in f : 
             if 'output_root' in line and not('#' in line):
                 line1,line2 = line.split('=')
-                line2 = '  {} \n'.format(os.path.join(setup.data_root,experiment.name,"fiducial"))
+                line2 = '=  {} \n'.format(os.path.join(setup.data_root,experiment.name,"fiducial"))
                 line = line1 + line2
             newText += line
     with open(os.path.join(CAMB_ROOT,"{}_inifiles".format(experiment.name),"params_fiducial.ini"),'w') as f :
@@ -194,7 +194,7 @@ def parameter_files(setup, experiment):
                 YHe_tmp = setup.use_BBN #Y_p is fixed but not by BBN consistency
      
             if 'ln10A_s' in parameter_list:
-                As = np.exp(temp['ln10As'])*1E-10
+                As = np.exp(temp['ln10A_s'])*1E-10
             elif '109A_s' in parameter_list:
                 As = temp['109A_s']*1E-9
             else:
@@ -214,14 +214,14 @@ def parameter_files(setup, experiment):
                         line2 = '=  {} \n'.format(pars_temp.omegab)
                         line = line1 + line2
                     if 'omch2' in line and not('#' in line):
-                        line1,line2 - line.split('=')
+                        line1,line2 = line.split('=')
                         line2 = '=  {} \n'.format(pars_temp.omegac)
                         line = line1 + line2
                     if 'omnuh2' in line and not('#' in line):
                         line1,line2 = line.split('=')
                         line2 = '=  {} \n'.format(pars_temp.omegan)
                     if 'massless_neutrinos' in line and not('#' in line):
-                        line1,line2 = line.split()
+                        line1,line2 = line.split('=')
                         line2 = '=  {} \n'.format(pars_temp.num_nu_massless)
                         line = line1 + line2
                     if 'massive_neutrinos' in line and not('#' in line):
@@ -246,7 +246,7 @@ def parameter_files(setup, experiment):
                         line = line1 + line2
                     if 'output_root' in line and not('#' in line):
                         line1,line2 = line.split('=')
-                        line2 = '  {} \n'.format(os.path.join(setup.data_root,experiment.name,"{}_{}".format(param,direction)))
+                        line2 = '=  {} \n'.format(os.path.join(setup.data_root,experiment.name,"{}_{}".format(param,direction)))
                         line = line1 + line2
 
                     new_file += line
@@ -261,23 +261,25 @@ def compile_CAMB(experiment):
         - experiment: 
     """ # TO COMPLETE
     
-    # Information about the frequencies used by CAMB are located in modules.F90
-    file_module = os.path.join(CAMB_ROOT,"modules.F90")
+    # Information about the frequencies used by CAMB are located in modules.f90
+    file_module = os.path.join(CAMB_ROOT,"modules.f90")
     newText = ''
+    freqs_write = experiment.freqs.copy()
+    freqs_write.insert(0,0) # insert freq 0 GHz to get the no Rayleigh case
     with open(file_module,'r') as f:
         for line in f:
-            if 'num_cnb_freq =' in line:
+            if 'num_cmb_freq =' in line:
                 line1,line2 = line.split('=')
-                line2 = '=  {:d}'.format(len(experiment.freqs))
+                line2 = '=  {:d} \n'.format(len(experiment.freqs)+1)
                 line = line1 + line2
             if 'phot_freqs(1:' in line :
                 line1,line2 = line.split('(1:')
-                line2 = '(1:{:d}) = {}'.format(len(experiment.freqs),str(experiment.freqs.insert(0,0))) # insert freq 0 GHz to get the no Rayleigh case
+                line2 = '(1:{:d}) = {} \n'.format(len(experiment.freqs)+1,str(freqs_write)) 
                 line = line1 + line2
             newText += line
     with open(file_module,'w') as f:
         f.write(newText)
-    print("modules.F90 file updated, compiling ... ",end = '')
+    print("modules.F90 file updated, compiling ... ",end = ' ')
     subprocess.call("make clean", shell = True, cwd = CAMB_ROOT, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
     subprocess.call("make", shell = True, cwd = CAMB_ROOT, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
     print("Done ! ")
@@ -290,7 +292,7 @@ def run_CAMB(experiment):
     
     param_files_list = os.listdir(os.path.join(CAMB_ROOT,"{}_inifiles".format(experiment.name))) 
     n_file = len(param_files_list)
-    print("Running CAMB on {:d} files ... ".format(n_file), end = "")
+    print("Running CAMB on {:d} files ... ".format(n_file))
     time_start = time.time()
     i = 1.
     for f in param_files_list : # loop over all the .ini files
@@ -298,9 +300,9 @@ def run_CAMB(experiment):
         subprocess.call("./camb {}".format(file_name), shell = True, cwd = CAMB_ROOT, stdout = subprocess.DEVNULL) # CHANGE HYREC to output in stdout and not stderr
         time_tmp = time.time()
         ETA = (n_file - i)*(time_tmp - time_start) / i
-        print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/n * 100, ETA // 60, ETA % 60), end = "\r" )
+        print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/n_file * 100, ETA // 60, ETA % 60), end = "\r" )
         i += 1
-    print("Done in {:2.0f} min {:2.0f} secs".format(ETA // 60, ETA % 60))
+    print("Done in {:2.0f} min {:2.0f} secs".format((time_tmp - time_start) // 60, (time_tmp - time_start) % 60))
     
 
     

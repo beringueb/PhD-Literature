@@ -28,6 +28,7 @@ if __name__ == "__main__":
     while len(list_experiments_included) != 0:
         fsky = min([expe.fsky - fskycurrent for expe in list_experiments_included])
         combined_experiment = ini.CombinedExperiment(list_experiments_included,fsky)
+        #combined_experiment.plot()
         list_combined_experiments.append(combined_experiment)
         for experiment in list_experiments_included:
             if experiment.fsky - fskycurrent == fsky:
@@ -38,8 +39,19 @@ if __name__ == "__main__":
     setup.get_list_experiments(list_combined_experiments)
     setup.get_fiducial(fid_file = '/home/bb510/Code/fishpy/input/fiducial.txt')
     cw.init_file(setup)
+    fisher_list = []
     for experiment in list_combined_experiments : # loop on every combined experiments
-        print(experiment.fsky)       
+        #cw.parameter_files(setup, experiment)      
+        #cw.compile_CAMB(experiment)
+        #cw.run_CAMB(experiment)
+        fisher = fi.FisherMatrix(setup.param_list,experiment)
+        fisher.get_fisher(setup)
+        fisher.write_to_txt('/home/bb510/Code/Rayleigh/fisher_matrices/tests')
+        fisher_list.append(fisher)
+    list_plot = [fisher_list[0] + fisher_list[1], fisher_list[1]]
+    print(fi.print_errors(list_plot))
+    #fi.plot_triangular(setup,list_plot)
+
 
 
 

@@ -142,8 +142,8 @@ class Experiment() :
         self.NlEE = NlEE
         self.combine_primary(list_freqs)
         if self.include_lens:
-            if hasattr(self,lensing_estimators):                
-                self.get_lensing(QUICKLENS_LOC,self.lensing_estimators)
+            if hasattr(self,'lensing_estimators'):                
+                self.get_lensing(self.lensing_estimators)
             else:
                 self.get_lensing()
                       
@@ -250,7 +250,7 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         name = ''
         for expe in list_experiments:
             name += '{} + '.format(expe.name)
-        self.name = name[0:-3] # name of the experiment
+        self.name = name[0:-3].replace(' ','') # name of the experiment
         print("Combining {} on {:3.1f}% of the sky.".format(self.name,self.fsky*100))
         
         include_P = False
@@ -271,7 +271,6 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         
         self.freqs = freqs
         self.freqs.sort()
-        
         self.lmax_T = max([expe.lmax_T for expe in list_experiments])
         self.lmax_P = max([expe.lmax_P for expe in list_experiments])
         self.lmin = min([expe.lmin for expe in list_experiments])
@@ -280,13 +279,11 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
 
         NlTT = np.zeros((lmax-1,2 + len(self.freqs))) 
         NlEE = np.zeros((lmax-1,2 + len(self.freqs))) 
-        noiseTT_tmp = np.zeros((lmax-1,1)) + 1E-15
-        noiseEE_tmp = np.zeros((lmax-1,1)) + 1E-15
         NlPP = np.zeros((lmax-1,2)) + np.inf
         i = 0
         for freq in self.freqs:
-            noiseTT_tmp = np.zeros(lmax-1) + 1E-15
-            noiseEE_tmp = np.zeros(lmax-1) + 1E-15
+            noiseTT_tmp = np.zeros(lmax-1) + 1e-15
+            noiseEE_tmp = np.zeros(lmax-1) + 1e-15
         
             #look in each experiment if there is a channel at that frequency +/- 10 GHz (arbitrary for now, maybe some reasons for that ?)
             for expe in list_experiments:
@@ -297,8 +294,9 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
                 else:
                     noiseTT_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlTT[:,2+ind]) #scaling with fsky
                     noiseEE_tmp[0:expe.lmax-1] += 1./(self.fsky/expe.fsky * expe.NlEE[:,2+ind])
-            NlTT[:,2+i] += 1./noiseTT_tmp
-            NlEE[:,2+i] += 1./noiseEE_tmp
+            NlTT[:,2+i] = 1./noiseTT_tmp
+            NlEE[:,2+i] = 1./noiseEE_tmp
+            i+=1
         noiseTT_tmp = np.zeros(lmax-1) + 1E-15
         noiseEE_tmp = np.zeros(lmax-1) + 1E-15
         noisePP_tmp = np.zeros(lmax-1) + 1E-15    
@@ -309,6 +307,9 @@ Inverse variance sum of NlEE for combined experiments that include polarization.
         NlTT[:,1] = 1./noiseTT_tmp
         NlEE[:,1] = 1./noiseEE_tmp
         NlPP[:,1] = 1./noisePP_tmp
+        NlTT[:,0] = np.linspace(2,lmax,lmax-1)
+        NlEE[:,0] = np.linspace(2,lmax,lmax-1)
+        NlPP[:,0] = np.linspace(2,lmax,lmax-1)
         self.NlTT = NlTT
         self.NlEE = NlEE
         self.NlPP = NlPP

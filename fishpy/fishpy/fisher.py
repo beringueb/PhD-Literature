@@ -4,7 +4,9 @@
 import numpy as np
 import os
 import time
-
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+import matplotlib.ticker as ticker
 
 class FisherMatrix():  
     """ Class that defines a fisher_matrix and methods useful to generate it, add two of them, reshuffle them, etc ... """
@@ -15,16 +17,17 @@ class FisherMatrix():
             - experiment: 
         """ #TO COMPLETE
         self.experiment = experiment # experiment corresponding to the fisher matrix
-        self.param_list = setup.param_list # list of the parameters to include in the fisher matrix
+        self.param_list = param_list # list of the parameters to include in the fisher matrix
         #Give a name to the fisher matrix : TT + TE + EE + PP + Rayleigh
         name = ': TT ({:d}) + '.format(experiment.lmax_T)
         if experiment.include_P:
             name += 'TE + EE ({:d}) + '.format(experiment.lmax_P)
-        if experiment.include_lensing:
+        if experiment.include_lens:
             name += 'PP + '
         if experiment.include_rayleigh:
             name += 'Rayleigh + {}  '.format(str(experiment.freqs))
         self.name = experiment.name + name[0:-2]
+        self.fsky = self.experiment.fsky
         self.fisher = np.zeros(( len(self.param_list), len(self.param_list) )) # fisher matrix per se
         
     def write_to_txt(self, root):
@@ -33,7 +36,7 @@ class FisherMatrix():
         """
         str0 = self.name[0:self.name.index(':')]
         str1 = 'p' if self.experiment.include_P else 'nop'
-        str2 = 'l' if self.experiment.include_lensing else 'nol'
+        str2 = 'l' if self.experiment.include_lens else 'nol'
         str3 = 'r' if self.experiment.include_rayleigh else 'nor'
         file_name = os.path.join(root,"fisher_{}_{}_{}_{}.fish".format(str0.strip(),str1,str2,str3)) 
         header = '{} \n {}'.format(self.name,str(self.param_list))
@@ -59,36 +62,51 @@ class FisherMatrix():
             deriv[parameter] = derivative(setup,self.experiment,data_root,parameter)
         i = 0
         time_start = time.time()
-        print("Computing fisher matrix of {} for {:d} parameters ... ".format(self.name,len(self.param_list)), end = '')
+        print("Computing fisher matrix of {} for {:d} parameters ... ".format(self.name,len(self.param_list)))
         for param_i in self.param_list:
             j = 0
             for param_j in self.param_list:
-                self.fisher[i,j] = self.experiment.fsky * np.sum((2*l+1.)/2.*fish_trace(lmax,deriv[param_i],deriv[param_j],cov_fid)) 
+                self.fisher[i,j] = self.fsky * np.sum((2*l+1.)/2.*fish_trace(lmax,deriv[param_i],deriv[param_j],cov_fid)) 
                 j += 1
+            i += 1
             time_tmp = time.time()
             ETA = (len(self.param_list) - i)*(time_tmp - time_start) / i
-            print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/n * 100, ETA // 60, ETA % 60), end = "\r" )
-            i += 1
-        print("Done in {:2.0f} min {:2.0f} secs".format(ETA // 60, ETA % 60))
+            print("{:3.1f}% done, ETA : {:2.0f} min {:2.0f} secs".format(i/len(self.param_list) * 100, ETA // 60, ETA % 60), end = "\r" )
+            
+        print("Done in {:2.0f} min {:2.0f} secs             ".format((time_tmp - time_start) // 60, (time_tmp - time_start) % 60))
         
     def reshuffle(self,new_param_list):
-        """ Method to reshuffle the fisher matrix witha a new parameter list 
+        """ Method to reshuffle the fisher matrix with a new parameter list 
             - new_param_list : New order of the parameter list, has to be of the same length than old one, separate function to fix parameter or marginalize.
         """
         old_param_list = self.param_list
-        try : 
-            assert len(old_param_list) == len(new_param_list)
-        except AssertionError:
-            print("Reshuffling a fisher matrix requires a new parameter list of the same length than initial one. Use fix method to shorten the param list")
         try :
             assert set(new_param_list).issubset(old_param_list)
         except AssertionError:
             print("The new parameter list needs to contain the same parameters than the old one !")
         indices = [old_param_list.index(param) for param in new_param_list]
         tmp = self.fisher
-        self.fisher = temp[np.ix_(indices, indices)]
+        self.fisher = tmp[np.ix_(indices, indices)]
         self.param_list = new_param_list
-                
+        return self
+    
+    def get_cov(self):
+        """ Method to get the covariance matrix from the fisher matrix. Assumes unsused parameters have already been fixed (by reshuffling for example)"""
+        cov = np.linalg.inv(self.fisher)
+        return cov
+        
+    def __add__(self,fisher_matrix):
+        """ Methos to add two fisher matrices together, reshuffle the second one to get the paramter order, change the name and add the matrices """
+        try:
+            assert isinstance(fisher_matrix,FisherMatrix)
+        except AssertionError:
+            print('Can only add two fisher matrices together')
+        else:
+            new_fisher = FisherMatrix(self.param_list,self.experiment)
+            new_fisher.name += 'on {:2.0f}% of the sky + {} on {:2.0f}% of the sky'.format(self.fsky*100,fisher_matrix.name,fisher_matrix.fsky*100)
+            fisher_matrix.reshuffle(self.param_list)
+            new_fisher.fisher = self.fisher + fisher_matrix.fisher
+            return new_fisher
 
         
 
@@ -109,10 +127,10 @@ def read_cl(data_root, lmax, n_freqs, parameter, direction=None):
         print("pandas not found, using numpy instead")
         pandas = False
     
-    if direrction is not None:
-        file_name = os.path.join(data_root,"{}_{}_".format(parameter,direction)) 
+    if direction is not None:
+        filename = os.path.join(data_root,"{}_{}_".format(parameter,direction)) 
     else:
-        file_name = os.path.join(data_root,"{}_".format("fiducial"))
+        filename = os.path.join(data_root,"{}_".format("fiducial"))
     cls = np.zeros((lmax-1,n_freqs+1,n_freqs+1,5))
     for i in range(n_freqs+1):
         for j in range(n_freqs+1):
@@ -129,7 +147,7 @@ def read_cl(data_root, lmax, n_freqs, parameter, direction=None):
         data_read_phi = np.loadtxt(filename + 'scalCls_lenspot.dat')
     cls[:,0,0,3] = data_read_phi[0:lmax-1,5] # PP only the primary channel is completed (for now)
     cls[:,0,0,4] = data_read_phi[0:lmax-1,6] # TP
-    return data
+    return cls
 
 def kron_delta(i,j):
     """ Kronecker delta symbol, returns 1 if i==j, 0 otherwise """
@@ -153,25 +171,25 @@ def compute_covariance(experiment,cls):
             for i in range(n_freqs+1):
                 for j in range(n_freqs+1):
                     cov[:,i,j] = cls[:,0,0,0] + kron_delta(i,j)*experiment.NlTT[:,i+1] + (1.-kron_delta(i,0))*cls[:,i,0,0] + (1.-kron_delta(j,0))*cls[:,0,j,0] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,0] # TT part
-                    cov[:,i+n_freq+1,j+n_freq+1] = cls[:,0,0,1] + kron_delta(i,j)*experiment.NlTEE[:,i+1] + (1.-kron_delta(i,0))*cls[:,i,0,1] + (1.-kron_delta(j,0))*cls[:,0,j,1] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,1] # EE part
-                    cov[:,i+n_freq+1,j] = cls[:,0,0,2] + (1.-kron_delta(i,0))*cls[:,i,0,2] + (1.-kron_delta(j,0))*cls[:,0,j,2] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,2] # TE part
-                    cov[:,i,j+n_freq+1] = cls[:,0,0,2] + (1.-kron_delta(i,0))*cls[:,i,0,2] + (1.-kron_delta(j,0))*cls[:,0,j,2] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,2] # TE part
+                    cov[:,i+n_freqs+1,j+n_freqs+1] = cls[:,0,0,1] + kron_delta(i,j)*experiment.NlEE[:,i+1] + (1.-kron_delta(i,0))*cls[:,i,0,1] + (1.-kron_delta(j,0))*cls[:,0,j,1] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,1] # EE part
+                    cov[:,i+n_freqs+1,j] = cls[:,0,0,2] + (1.-kron_delta(i,0))*cls[:,i,0,2] + (1.-kron_delta(j,0))*cls[:,0,j,2] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,2] # TE part
+                    cov[:,i,j+n_freqs+1] = cls[:,0,0,2] + (1.-kron_delta(i,0))*cls[:,i,0,2] + (1.-kron_delta(j,0))*cls[:,0,j,2] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,2] # TE part
         else:
             cov = np.zeros((l_max-1,2*(n_freqs+1)+1))
             for i in range(n_freqs+1):
                 for j in range(n_freqs +1):
                     cov[:,i,j] = cls[:,0,0,0] + kron_delta(i,j)*experiment.NlTT[:,i+1] + (1.-kron_delta(i,0))*cls[:,i,0,0] + (1.-kron_delta(j,0))*cls[:,0,j,0] + (1-kron_delta(i,0))*(1-kron_delta(j,0))*cls[:,i,j,0] # TT part
     else:
-        if experiment.incude_P:
-            cov = np.zeros((3,3))
+        if experiment.include_P:
+            cov = np.zeros((lmax-1,3,3))
             cov[:,0,0] = cls[:,0,0,0] + experiment.NlTT[:,1] 
             cov[:,0,1] = cls[:,0,0,2]
             cov[:,1,0] = cls[:,0,0,2]
             cov[:,1,1] = cls[:,0,0,1] + experiment.NlEE[:,1]
         else:
-            cov = np.zeros((2,2))
+            cov = np.zeros((lmax-1,2,2))
             cov[:,0,0] = cls[:,0,0,0] + experiment.NlTT[:,1]
-    if experiment.include_lensing:
+    if experiment.include_lens:
         cov[:,-1,0] = cls[:,0,0,4] # TP part
         cov[:,0,-1] = cls[:,0,0,4] # TP part
         cov[:,-1,-1] = cls[:,0,0,3] #PP part
@@ -212,10 +230,132 @@ def fish_trace(lmax,deriv_i,deriv_j,cov_fid):
     tr = np.zeros(lmax-1)
     for ell in range(lmax-1):
         inv = np.linalg.inv(cov_fid[ell,:,:])
-        tr = np.trace(np.dot(inv,np.dot(deriv_i,np.dot(inv,deriv_j))))
+        tr[ell] = np.trace(np.dot(inv,np.dot(deriv_i[ell,:,:],np.dot(inv,deriv_j[ell,:,:]))))
     return tr
     
+def plot_cov_ellipse(cov, pos, nstd=2, ax=None, **kwargs):
+    if ax is None:
+        ax = plt.gca()
+    a = np.sqrt((cov[0,0]+cov[1,1])/2. + np.sqrt((cov[0,0]-cov[1,1])**2/4. + cov[0,1]**2))
+    b = np.sqrt((cov[0,0]+cov[1,1])/2. - np.sqrt((cov[0,0]-cov[1,1])**2/4. + cov[0,1]**2))
+    theta = np.degrees(np.arctan2(2*cov[0,1],cov[0,0]-cov[1,1]))/2
+    alphas = np.asarray((2.3,6.17,11.8))
+    alpha = np.sqrt(alphas[nstd-1]) 
+    # Width and height are "full" widths, not radius
+    ellip = Ellipse(xy=pos, width=2*alpha*a, height=2*alpha*b, angle=theta, **kwargs)
+    ax.add_artist(ellip)
+    return ellip
+    
+  
+def print_errors(list_fisher):
+    """ Print marginalized errors on paramters. Assumed fisher matrices in list_fisher are reshuffled to have the same parameter order.
+        - list_fisher : list of the fisher matrices from which to get the errors.
+        return : string
+    """
+    cov_list = [fish.get_cov() for fish in list_fisher]
+    parameter_list = list_fisher[0].param_list
+    string = ''
+    j = 0
+    for param in parameter_list:
+        string += " Error on {}   :  ".format(param)
+        for i in range(len(cov_list)):
+            string += '{:5.3e}   |'.format(np.sqrt(cov_list[i][j,j]) )
+        string += '\n'
+        j +=1
+    return string
+
+def plot_triangular(setup, list_fisher, parameter_list=None):
+    """ Plot triangular plot for list of fisher matrix
+        - setup_used, must be the same for every fisher matrices, at least in terms of fiducial values and step sizes
+        - list_fisher : list of fisher matrices to plot
+        - parameter_list : list of parameters to plot, if None uses the paramter list of the first fisher matrix in the list
+    """
+
+
+    if parameter_list is None:
+        parameter_list = list_fisher[0].param_list
+    list_to_plot = []
+    for fish in list_fisher:
         
+        list_to_plot.append(fish.reshuffle(parameter_list))
+    n_params = len(parameter_list)
+    color = ('k','c','b','y','g','r','gold','sienna','coral','navy')
+    names = {'H0':r'$H_0$','A_s':r'$A_s$','109A_s':r'$10^9 A_s$','ln10A_s':r'$\ln(10^{10}a_s)$','N_eff':r'$N_{eff}$','Y_He':r'$Y_{He}$','ombh2':r'$\Omega bh^2$','omch2':r'$\Omega ch^2$','theta_MC':r'$\theta_{MC}$','n_s':r'$n_s$','tau':r'$\tau$'}
+    center = [setup.fiducial[param] for param in parameter_list]
+    delta = [setup.step[param] for param in parameter_list]
+    
+    plt.rc('text', usetex = True) 
+    fig,axs = plt.subplots(n_params,n_params,figsize = (30,15))
+    plt.subplots_adjust(wspace=0, hspace=0,left=0.06,right=0.98,top = 0.98,bottom=0.06)
+    for i in range(n_params):
+        for j in range(i+1):
+            if i != j:
+                for k in range(len(list_to_plot)):
+                    cov = list_to_plot[k].get_cov()[np.ix_([j,i],[j,i])]
+                    e = plot_cov_ellipse(cov,[center[j],center[i]],ax=axs[i,j],nstd = 1,lw = 1, ec = color[k], fc = 'None',alpha = 1,label = r'{}'.format(list_to_plot[k].name))
+                
+                axs[i,j].scatter(center[j],center[i], c = 'r', marker = '+')
+                axs[i,j].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
+                axs[i,j].set_xlim(center[j]-3*delta[j], center[j]+3*delta[j])
+                axs[i,j].set_ylim(center[i]-3*delta[i], center[i]+3*delta[i])
+                axs[i,j].xaxis.set_ticks(np.linspace(center[j]-3*delta[j], center[j]+3*delta[j],9))
+                axs[i,j].yaxis.set_ticks(np.linspace(center[i]-3*delta[i], center[i]+3*delta[i],7))
+                for label in axs[i,j].xaxis.get_ticklabels()[::2]:
+                    label.set_visible(False)
+                for label in axs[i,j].yaxis.get_ticklabels()[::2]:
+                    label.set_visible(False)
+                fig.delaxes(axs[j,i]) #delete unused plots
+                
+            else: 
+                xx = np.linspace(center[i]-6*delta[i], center[i]+6*delta[i], 2000)
+                for k in range(len(list_to_plot)):
+                    cov = list_to_plot[k].get_cov()
+                    yy = np.exp(-(xx-center[i])**2/(2*cov[i,i]))
+                    axs[i,j].plot(xx,yy,c = color[k], lw = 1, label = r'{}'.format(list_to_plot[k].name))
+                axs[i,j].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
+                axs[i,j].xaxis.set_ticks(np.linspace(center[j]-3*delta[j],center[j]+3*delta[j],9))
+                axs[i,j].set_xlim(center[j]-3*delta[j], center[j]+3*delta[j])
+                axs[i,j].set_ylim(0,1)
+                for label in axs[i,j].xaxis.get_ticklabels()[::2]:
+                    label.set_visible(False)
+            axs[i,j].tick_params('both', labelsize = 14)
+            axs[0,0].set_yticklabels([])
+            axs[n_params-1,j].set_xlabel(names[parameter_list[j]], fontsize = 15)
+            x_formatter = ticker.ScalarFormatter(useOffset=True)
+            x_formatter.set_scientific(True)
+            axs[n_params-1,j].xaxis.set_major_formatter(x_formatter)
+            axs[0,0].legend(loc = 'center',prop = {'size':14},fancybox = True, shadow = True,bbox_to_anchor = (1.75,0.45))
+            if i != n_params-1 :
+                axs[i,j].set_xticklabels([])
+            if j != 0 :
+                axs[i,j].set_yticklabels([])
+            if i != 0:
+                axs[i,0].set_ylabel(names[parameter_list[i]], fontsize = 15)
+                y_formatter = ticker.ScalarFormatter(useOffset=True)
+                y_formatter.set_scientific(True)
+                axs[i,0].yaxis.set_major_formatter(y_formatter)
+    plt.show()
+                
+
+                
+
+                    
+                    
+    
+                         
+                         
+                         
+                         
+                        
+    
+    
+    
+    
+        
+    
+        
+    
+           
     
              
    
