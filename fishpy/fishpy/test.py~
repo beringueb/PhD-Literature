@@ -63,7 +63,7 @@ ax1.tick_params('both', labelsize = 22)
 t = ax1.yaxis.get_offset_text()
 
 t.set_size(18)
-ax1.legend(loc = 'center',prop = {'size':19}, fancybox = True, shadow = True,bbox_to_anchor = (0.40,0.87))
+ax1.legend(loc = 'center',prop = {'size':19}, fancybox = True, shadow = True,bbox_to_anchor = (0.35,0.87))
 plt.suptitle(r'Improvement on $N_{\mathrm{eff}}$ thanks to Rayleigh scattering for CCAT-prime', fontsize = 20)
 plt.annotate(s='', xy=(6.,0.0535), xytext=(noise_rayleigh,0.0535), arrowprops=dict(arrowstyle='<->'))
 plt.annotate(s='', xy=(3,error_CCAT), xytext=(3,error_rayleigh), arrowprops=dict(arrowstyle='<->'))

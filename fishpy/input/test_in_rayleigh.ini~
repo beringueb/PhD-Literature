@@ -12,13 +12,13 @@ update = True
 polarization = True
 fsky = 0.29
 lensing = False
-rayleigh = False
+rayleigh = True
 lmin = 500
-lmax_T = 4000
+lmax_T = 3000
 lmax_P = 5000
-freqs = 95,150,226,273,350,405,862
-noise_pixel_T = 5.8,6.3, 16.98, 21.47, 86.58, 249.41, 242487.09
-beam_fwhm = 2.2,1.4,1.0,0.8,0.6,0.5,0.3  
+freqs = 150,226,273,350,405,862
+noise_pixel_T =6,5,6,30,70,7000
+beam_fwhm = 1.4,1.0,0.8,0.6,0.5,0.3  
 
 
 [PLANCK]

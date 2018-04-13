@@ -97,7 +97,7 @@ if __name__ == "__main__":
     list_plot.insert(0,fisher_list[0] + fisher_list[1])
     
     print(fi.print_errors(list_plot))
-    #fi.plot_triangular(setup,list_plot,['N_eff','theta_MC','ombh2'])
+    fi.plot_triangular(setup,list_plot,['N_eff','n_s','theta_MC','ombh2'])
 
 
 

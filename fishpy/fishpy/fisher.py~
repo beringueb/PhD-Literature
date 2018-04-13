@@ -192,7 +192,7 @@ def compute_covariance(experiment,cls):
     if experiment.include_lens:
         cov[:,-1,0] = cls[:,0,0,4] # TP part
         cov[:,0,-1] = cls[:,0,0,4] # TP part
-        cov[:,-1,-1] = cls[:,0,0,3] + experiment.NlPP[:,1] #PP part
+        cov[:,-1,-1] = cls[:,0,0,3] #PP part
         return cov
     else:
         return cov[:,0:-1,0:-1]
@@ -263,23 +263,6 @@ def print_errors(list_fisher):
         string += '\n'
         j +=1
     return string
-    
-def get_error(fisher,parameter):
-    """ Get the error on a given parameter marginalized over every other parameter in the fisher matrix
-        - fisher : fisher matrix
-        - parameter : parameter we are interested in
-        return : error : error on parameter marginalized over every other paramters in the fisher matrix
-    """
-    try : 
-        index = fisher.param_list.index(parameter) 
-    except ValueError:
-        print('{} is not in the list of parameters for the fiser matrix !'.format(parameter))
-        error = np.inf
-    else:
-        error = np.sqrt(np.linalg.inv(fisher.fisher)[index,index])
-    return error
-        
-        
 
 def plot_triangular(setup, list_fisher, parameter_list=None):
     """ Plot triangular plot for list of fisher matrix
@@ -313,10 +296,10 @@ def plot_triangular(setup, list_fisher, parameter_list=None):
                 
                 axs[i,j].scatter(center[j],center[i], c = 'r', marker = '+')
                 axs[i,j].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
-                axs[i,j].set_xlim(center[j]-1*delta[j], center[j]+1*delta[j])
-                axs[i,j].set_ylim(center[i]-1*delta[i], center[i]+1*delta[i])
-                axs[i,j].xaxis.set_ticks(np.linspace(center[j]-1*delta[j], center[j]+1*delta[j],9))
-                axs[i,j].yaxis.set_ticks(np.linspace(center[i]-1*delta[i], center[i]+1*delta[i],7))
+                axs[i,j].set_xlim(center[j]-0.9*delta[j], center[j]+0.9*delta[j])
+                axs[i,j].set_ylim(center[i]-0.9*delta[i], center[i]+0.9*delta[i])
+                axs[i,j].xaxis.set_ticks(np.linspace(center[j]-0.9*delta[j], center[j]+0.9*delta[j],9))
+                axs[i,j].yaxis.set_ticks(np.linspace(center[i]-0.9*delta[i], center[i]+0.9*delta[i],7))
                 for label in axs[i,j].xaxis.get_ticklabels()[::2]:
                     label.set_visible(False)
                 for label in axs[i,j].yaxis.get_ticklabels()[::2]:
@@ -330,14 +313,14 @@ def plot_triangular(setup, list_fisher, parameter_list=None):
                     yy = np.exp(-(xx-center[i])**2/(2*cov[i,i]))
                     axs[i,j].plot(xx,yy,c = color[k], lw = 1.2, label = label_list[k])
                 axs[i,j].grid(color='k', linestyle = '-.', linewidth = 0.5, alpha = 0.5)
-                axs[i,j].xaxis.set_ticks(np.linspace(center[j]-1*delta[j],center[j]+1*delta[j],9))
-                axs[i,j].set_xlim(center[j]-1*delta[j], center[j]+1*delta[j])
+                axs[i,j].xaxis.set_ticks(np.linspace(center[j]-0.9*delta[j],center[j]+0.9*delta[j],9))
+                axs[i,j].set_xlim(center[j]-0.9*delta[j], center[j]+0.9*delta[j])
                 axs[i,j].set_ylim(0,1)
                 for label in axs[i,j].xaxis.get_ticklabels()[::2]:
                     label.set_visible(False)
             axs[i,j].tick_params('both', labelsize = 13)
             axs[0,0].set_yticklabels([])
-            axs[n_params-1,j].set_xlabel(names[parameter_list[j]], fontsize = 18)
+            axs[n_params-1,j].set_xlabel(names[parameter_list[j]], fontsize = 16)
             x_formatter = ticker.ScalarFormatter(useOffset=True)
             x_formatter.set_scientific(True)
             axs[n_params-1,j].xaxis.set_major_formatter(x_formatter)
@@ -347,7 +330,7 @@ def plot_triangular(setup, list_fisher, parameter_list=None):
             if j != 0 :
                 axs[i,j].set_yticklabels([])
             if i != 0:
-                axs[i,0].set_ylabel(names[parameter_list[i]], fontsize = 18)
+                axs[i,0].set_ylabel(names[parameter_list[i]], fontsize = 16)
                 y_formatter = ticker.ScalarFormatter(useOffset=True)
                 y_formatter.set_scientific(True)
                 axs[i,0].yaxis.set_major_formatter(y_formatter)
