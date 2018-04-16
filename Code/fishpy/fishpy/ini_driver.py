@@ -7,7 +7,7 @@ import configparser
 import numpy as np
 import noise_generator as noise  
 
-QUICKLENS_LOC = "/Users/benjamin_brng/Documents/Cambridge/PhD/Rayleigh/Code/quicklens/" # Location of quicklens, hard coded
+QUICKLENS_LOC = "/home/bb510/Code/quicklens/" # Location of quicklens, hard coded
 
 class Experiment() : 
     """ Class that contains information about a given CMB experiment : 

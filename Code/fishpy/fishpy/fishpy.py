@@ -42,10 +42,10 @@ def loop(ini_file):
         
     ### RUN CAMB FOR EACH COMBINED EXPERIMENT ###
     setup.get_list_experiments(list_combined_experiments)
-    setup.get_fiducial(fid_file = '/Users/benjamin_brng/Documents/Cambridge/PhD/Rayleigh/Code/fishpy/input/fiducial.txt')
+    setup.get_fiducial(fid_file = '/home/bb510/Code/fishpy/input/fiducial.txt')
     cw.init_file(setup)
     fisher_list = []
-    root = '/Users/benjamin_brng/Documents/Cambridge/PhD/Rayleigh/Data/Fisher_matrices/SO_{:d}_{:3.1f}'.format(sensi,fsky_write)
+    root = '/home/bb510/Code/Rayleigh/fisher_matrices/SO_{:d}_{:3.1f}'.format(sensi,fsky_write)
     if os.path.exists(root):
         pass 
     else:

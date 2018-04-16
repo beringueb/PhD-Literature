@@ -17,7 +17,7 @@ try:
 except ImportError:
     print("pycamb (module camb) needs to be installed in order to set background cosmology")
     
-CAMB_ROOT = '/Users/benjamin_brng/Documents/Cambridge/PhD/Rayleigh/Code/CAMB/'  # Location of the CAMB folder.
+CAMB_ROOT = "/home/bb510/Code/CAMB/"  # Location of the CAMB folder.
 
 def init_file(setup):
     """ Function to generate the .ini file for the fiducial cosmology.
