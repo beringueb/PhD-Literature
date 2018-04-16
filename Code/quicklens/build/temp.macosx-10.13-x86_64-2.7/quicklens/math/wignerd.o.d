@@ -1,0 +1,3 @@
+build/temp.macosx-10.13-x86_64-2.7/quicklens/math/wignerd.o: \
+  quicklens/math/wignerd.c
+commandline: -Ibuild/src.macosx-10.13-x86_64-2.7/quicklens/math -I/usr/local/lib/python2.7/site-packages/numpy/core/include -I/usr/local/include -I/usr/local/opt/openssl/include -I/usr/local/opt/sqlite/include -I/usr/local/Cellar/python@2/2.7.14_3/Frameworks/Python.framework/Versions/2.7/include/python2.7 -c-Ibuild/src.macosx-10.13-x86_64-2.7/quicklens/math -I/usr/local/lib/python2.7/site-packages/numpy/core/include -I/usr/local/include -I/usr/local/opt/openssl/include -I/usr/local/opt/sqlite/include -I/usr/local/Cellar/python@2/2.7.14_3/Frameworks/Python.framework/Versions/2.7/include/python2.7

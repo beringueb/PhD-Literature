@@ -1,0 +1,25 @@
+This code was written by Yacine Ali-Haimoud (ARR 2015) an modified by PDM (2016)
+
+It contains dark matter annihilation/change in fine structure constant and m_e
+
+Compile hyrec as usual
+
+Replace the Makefile_main in the CAMB folder (put Hyrec in ../ w.r.t CAMB)
+
+Copy Hyrec.F90 to the CAMB dir. 
+Copy the modified modules.f90 to the CAMB dir. (this makes sure that your code runs on default  when you use pycamb)
+Compile CAMB as usual.
+
+You can use the paramsDA.ini file to run with above paramaters. 
+
+Comment about pycamb. To make this work with pycamb you need to compile the 
+Hyrec lib with -fPIC to make it a position independent code. 
+In addition, I have slightly modified the Makefile_main to make sure the 
+camblib is created including the hyreclib. If you do not, it wont recognize 
+variables defined in Hyrec (basically, it is usefless). 
+
+I also included recombination.py (thanks to Joel Meyers) to be added to the pycamb/camb directory. It links the parameters
+that discribe the above modifications. 
+
+
+ 
