@@ -28,5 +28,5 @@ This repository contains some of the literature material used for my PhD at DAMT
 13/02/2018 : - Fixed errors from previous post. Amplitude is now correctly accounted for and each perturbation output correctly. However, it seems that there is an error in the output of the xe. so I recomputed them from scratch, which is faster anyway ... Need to further check that though ! 
              - Test an implementation of +/-1 amplitude to correctly implement the derivative of the covariance matrix. check if i get the results from paper.
  
-            
+16/04/2018 : - Fresh start. Re uploaded the repo with CAMB/HyRec/fishpy/quicklens/python_scripts with a different subrepos.            
  
