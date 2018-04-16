@@ -7,6 +7,7 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.ticker as ticker
+import pickle
 
 class FisherMatrix():  
     """ Class that defines a fisher_matrix and methods useful to generate it, add two of them, reshuffle them, etc ... """
@@ -43,6 +44,10 @@ class FisherMatrix():
         print("Saving fisher matrix to {} ... ".format(file_name),end = '')
         np.savetxt(file_name,self.fisher,header=header)
         print("Done !")
+        filename_pick = os.path.join(root,'pickles',"fisher_{}_{}_{}_{}.pick".format(str0.strip(),str1,str2,str3))
+        with open(filename_pick,'wb') as f:
+            pickle.dump(self,f)
+        
         
     def get_fisher(self,setup):
         """ Method to compute the fisher matrix :

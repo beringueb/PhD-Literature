@@ -7,7 +7,7 @@ import configparser
 import numpy as np
 import noise_generator as noise  
 
-QUICKLENS_LOC = "/Users/benjamin_brng/Documents/Cambridge/PhD/Rayleigh/Code/quicklens/" # Location of quicklens, hard coded
+QUICKLENS_LOC = "/home/bb510/Code/quicklens/" # Location of quicklens, hard coded
 
 class Experiment() : 
     """ Class that contains information about a given CMB experiment : 
@@ -54,15 +54,20 @@ class Experiment() :
         ell = np.linspace(2,lmax,lmax-1).reshape(lmax-1,1)
         noise_tot = np.concatenate([ell,self.NlTT[:,1:],self.NlEE[:,1:],self.NlPP[:,1].reshape(lmax-1,1)], axis = 1)
         header = "{} : ell, Primary, {} GHz + Polarization + Lensing".format(self.name,str(self.freqs))
-        file_name = os.path.join(noise_root, "noise_{}_lensing.dat".format(self.name))
+        if self.name == 'SO':
+            file_name = os.path.join(noise_root, "noise_{}_{:d}_{:3.1f}_lensing.dat".format(self.name,self.sensitivity,self.fsky))
+        else:
+            file_name = os.path.join(noise_root, "noise_{}_lensing.dat".format(self.name))
         print("Writting noise power spectra to {} ... ".format(file_name), end="")
         np.savetxt(file_name, noise_tot, header = header, fmt = "%d    " + (2*(len(self.freqs)+1)+1)*"%.10e    ", newline = "\n")
         print("Done !")
         
     def read_noise_file(self,noise_root):
         """ Reading noise power spectra from a file located at noise_root. Assumes file already exists."""
-        
-        file_name = os.path.join(noise_root,"noise_{}_lensing.dat".format(self.name))
+        if self.name == 'SO':
+            file_name = os.path.join(noise_root, "noise_{}_{:d}_{:3.1f}_lensing.dat".format(self.name,self.sensitivity,self.fsky))
+        else:
+            file_name = os.path.join(noise_root, "noise_{}_lensing.dat".format(self.name))
         print("Reading noise power spectra from {} ... ".format(file_name), end = "")
         noise_read = np.loadtxt(file_name)
         indexTT = [i+1 for i in range(len(self.freqs)+1)]
@@ -125,13 +130,13 @@ class Experiment() :
         lmax = max(self.lmax_T,self.lmax_P)
         if self.name == 'SO':
             try:
-                assert hasattr(self,'sensibility')
+                assert hasattr(self,'sensitivity')
             except AssertionError:
-                print("For So, sensibility parameter should be specified, check .ini file")
+                print("For SO, sensitivity parameter should be specified, check .ini file")
             else :
-                NlTT, NlEE = noise.SO(self.freqs,self.sensibility,self.fsky,lmax)
-                print("Using SO V3 noise genrator")
-        elif hasattr(self,'alpha_temp'):
+                NlTT, NlEE = noise.SO(self.freqs,self.sensitivity,self.fsky,lmax)
+                print("Using SO V3 noise generator")
+        elif self.atmospheric:
             NlTT, NlEE = noise.atmospheric_noise(self.freqs,self.noise_pix_T,self.beam_FWHM,lmax,self.alpha_temp, self.alpha_pol, self.ell_pivot_temp, self.ell_pivot_pol, self.c_atmo_temp, self.fsky, self.noise_pix_P)
             print("Using atmospheric noise model for {}".format(self.name))
         else:
@@ -182,7 +187,7 @@ class Experiment() :
             import subprocess 
         except ImportError:
             print("Module suprocess needs to be installed")
-        subprocess.call("python22 {}".format(os.path.join(QUICKLENS_LOC,"get_lensing.py")), shell = True, cwd = QUICKLENS_LOC)
+        subprocess.call("python {}".format(os.path.join(QUICKLENS_LOC,"get_lensing.py")), shell = True, cwd = QUICKLENS_LOC)
         
         self.NlPP = np.loadtxt(os.path.join(QUICKLENS_LOC,"temp_fishpy","NlPP.temp"))
         
@@ -452,8 +457,8 @@ def parser(inifile):
         lmax_T = config.getint(experiment,'lmax_T')
         lmax_P = config.getint(experiment,'lmax_P')
         freqs = [ int(fr) for fr in config.get(experiment,'freqs').split(',')]      
-        if config.has_option(experiment,'sensibility'):
-            sensibility = config.getint(experiment,'sensibility')
+        if config.has_option(experiment,'sensitivity'):
+            sensitivity = config.getint(experiment,'sensitivity')
             SO = True
         else:
             if config.has_option(experiment,'noise_pixel_T'):
@@ -491,15 +496,17 @@ def parser(inifile):
         if config.has_option(experiment,'update'):
             expe.update = config.getboolean(experiment,'update')
         else:
-            expe.update = True     
+            expe.update = True  
+        expe.atmospheric = atmo_noise   
         if atmo_noise:
             expe.alpha_temp = alpha_temp
             expe.alpha_pol = alpha_pol
             expe.ell_pivot_temp = ell_pivot_temp
             expe.ell_pivot_pivot = ell_pivot_pol
             expe.c_atmo_temp = c_atmo_temp
+            
         if SO: 
-            expe.sensibility = sensibility
+            expe.sensitivity = sensitivity
         else:
             expe.noise_pix_T = noise_pix_T
             expe.noise_pix_P = noise_pix_P
