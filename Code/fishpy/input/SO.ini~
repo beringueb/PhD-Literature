@@ -1,24 +1,23 @@
 [general_parameters]
-parameters = ombh2,omch2,theta_MC,ln10A_s,n_s,tau,N_eff
+parameters = ombh2,omch2,theta_MC,109A_s,n_s,tau,N_eff
 noise_root = /home/bb510/Code/Rayleigh/noise/tests
-data_root = /home/bb510/Code/CAMB/tests/
+data_root = /store/DAMTP/bb510/Rayleigh/Data/camb_out/
 use_BBN = 0.25
 mass_neutrinos = 60.
 
-[CCAT]
-name = CCAT
+[SO]
+name = SO
 include = True 
 update = True
 polarization = True
-fsky = 0.29
+fsky = 0.4
 lensing = False
-rayleigh = False
-lmin = 500
+rayleigh = True
+lmin = 30
 lmax_T = 3000
 lmax_P = 5000
-freqs = 150,226,273,350,405,862
-noise_pixel_T =6,5,6,30,70,7000
-beam_fwhm = 1.4,1.0,0.8,0.6,0.5,0.3  
+freqs = 27,39,93,145,225,280
+sensitivity = 2  
 
 
 [PLANCK]
